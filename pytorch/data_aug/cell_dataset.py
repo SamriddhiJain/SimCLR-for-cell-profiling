@@ -10,7 +10,7 @@ from imutils import paths
 class CellDataset(Dataset):
     """cropped cell image dataset."""
 
-    def __init__(self, path, transform=None):
+    def __init__(self, path, input_shape, transform=None):
         """
         Args:
             csv_file (string): Path to the csv file with annotations.
@@ -21,6 +21,7 @@ class CellDataset(Dataset):
         self.root_dir = path
         self.train_images = list(paths.list_images(path))
         self.transform = transform
+        self.input_shape = input_shape
         print(f"Total images: {len(self.train_images)}")
 
     def __len__(self):
@@ -34,7 +35,7 @@ class CellDataset(Dataset):
         image = torch.split(image_string, int(image_string.shape[1]/3), dim=1)
         sample = torch.stack((image[0], image[1], image[2])).float()
         sample = transforms.ToPILImage()(sample)
-        sample = sample.resize((256, 256), 2)
+        sample = sample.resize((self.input_shape[0], self.input_shape[0]), 2)
 
         if self.transform:
             sample = self.transform(sample)

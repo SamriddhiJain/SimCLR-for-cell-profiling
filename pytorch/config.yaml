@@ -13,7 +13,7 @@ model:
 dataset:
   path: '../../single-cell-sample/'
   s: 1
-  input_shape: (96,96,3)
+  input_shape: (150,150,3)
   num_workers: 0
   valid_size: 0.05
 

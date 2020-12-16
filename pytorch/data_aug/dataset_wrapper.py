@@ -24,7 +24,7 @@ class DataSetWrapper(object):
 
         # train_dataset = datasets.STL10('./data', split='train+unlabeled', download=True,
         #                                transform=SimCLRDataTransform(data_augment))
-        train_dataset = CellDataset(self.path, transform=SimCLRDataTransform(data_augment))
+        train_dataset = CellDataset(self.path, self.input_shape, transform=SimCLRDataTransform(data_augment))
 
         train_loader, valid_loader = self.get_train_validation_data_loaders(train_dataset)
         return train_loader, valid_loader
