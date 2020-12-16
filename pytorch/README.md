@@ -1,4 +1,5 @@
 # PyTorch SimCLR: A Simple Framework for Contrastive Learning of Visual Representations
+Clone of https://github.com/sthalles/SimCLR
 
 ### Blog post with full documentation: [Exploring SimCLR: A Simple Framework for Contrastive Learning of Visual Representations](https://sthalles.github.io/simple-self-supervised-learning/)
 
@@ -21,7 +22,7 @@ Before running SimCLR, make sure you choose the correct running configurations o
 ```yaml
 
 # A batch size of N, produces 2 * (N-1) negative samples. Original implementation uses a batch size of 8192
-batch_size: 512 
+batch_size: 512
 
 # Number of epochs to train
 epochs: 40
@@ -39,41 +40,41 @@ log_every_n_steps: 50
 weight_decay: 10e-6
 
 # if True, training is done using mixed precision. Apex needs to be installed in this case.
-fp16_precision: False 
+fp16_precision: False
 
 # Model related parameters
 model:
   # Output dimensionality of the embedding vector z. Original implementation uses 2048
-  out_dim: 256 
-  
+  out_dim: 256
+
   # The ConvNet base model. Choose one of: "resnet18" or "resnet50". Original implementation uses resnet50
   base_model: "resnet18"
 
 # Dataset related parameters
 dataset:
   s: 1
-  
-  # dataset input shape. For datasets containing images of different size, this defines the final 
-  input_shape: (96,96,3) 
-  
+
+  # dataset input shape. For datasets containing images of different size, this defines the final
+  input_shape: (96,96,3)
+
   # Number of workers for the data loader
   num_workers: 0
-  
+
   # Size of the validation set in percentage
   valid_size: 0.05
 
 # NTXent loss related parameters
 loss:
   # Temperature parameter for the contrastive objective
-  temperature: 0.5 
-  
+  temperature: 0.5
+
   # Distance metric for contrastive loss. If False, uses dot product. Original implementation uses cosine similarity.
   use_cosine_similarity: True
 ```
 
 ## Feature Evaluation
 
-Feature evaluation is done using a linear model protocol. 
+Feature evaluation is done using a linear model protocol.
 
 Features are learned using the ```STL10 train+unsupervised``` set and evaluated in the ```test``` set;
 
