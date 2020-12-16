@@ -93,7 +93,8 @@ class SimCLR(object):
                 loss = self._step(model, xis, xjs, n_iter)
 
                 if n_iter % self.config['log_every_n_steps'] == 0:
-                    self.writer.add_scalar('train_loss', loss, global_step=n_iter)
+                    #self.writer.add_scalar('train_loss', loss, global_step=n_iter)
+                    print(f"train_loss {loss.item()}, iter {n_iter}")
 
                 if apex_support and self.config['fp16_precision']:
                     with amp.scale_loss(loss, optimizer) as scaled_loss:
@@ -112,13 +113,15 @@ class SimCLR(object):
                     best_valid_loss = valid_loss
                     torch.save(model.state_dict(), os.path.join(model_checkpoints_folder, 'model.pth'))
 
-                self.writer.add_scalar('validation_loss', valid_loss, global_step=valid_n_iter)
+                #self.writer.add_scalar('validation_loss', valid_loss, global_step=valid_n_iter)
+                print(f"validation_loss {valid_loss.item()}, iter {valid_n_iter}")
                 valid_n_iter += 1
 
             # warmup for the first 10 epochs
             if epoch_counter >= 10:
                 scheduler.step()
-            self.writer.add_scalar('cosine_lr_decay', scheduler.get_lr()[0], global_step=n_iter)
+            #self.writer.add_scalar('cosine_lr_decay', scheduler.get_lr()[0], global_step=n_iter)
+            print(f"cosine_lr_decay {scheduler.get_lr()[0]}, epoch {epoch_counter}")
 
     def _load_pre_trained_weights(self, model):
         try:
