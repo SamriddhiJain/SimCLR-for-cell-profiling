@@ -1,3 +1,0 @@
-[submodule "pytorch/SimCLR"]
-	path = pytorch/SimCLR
-	url = https://github.com/sthalles/SimCLR
