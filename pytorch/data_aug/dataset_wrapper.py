@@ -4,13 +4,15 @@ from torch.utils.data.sampler import SubsetRandomSampler
 import torchvision.transforms as transforms
 from data_aug.gaussian_blur import GaussianBlur
 from torchvision import datasets
+from data_aug.cell_dataset import CellDataset
 
 np.random.seed(0)
 
 
 class DataSetWrapper(object):
 
-    def __init__(self, batch_size, num_workers, valid_size, input_shape, s):
+    def __init__(self, batch_size, path, num_workers, valid_size, input_shape, s):
+        self.path = path
         self.batch_size = batch_size
         self.num_workers = num_workers
         self.valid_size = valid_size
@@ -20,8 +22,9 @@ class DataSetWrapper(object):
     def get_data_loaders(self):
         data_augment = self._get_simclr_pipeline_transform()
 
-        train_dataset = datasets.STL10('./data', split='train+unlabeled', download=True,
-                                       transform=SimCLRDataTransform(data_augment))
+        # train_dataset = datasets.STL10('./data', split='train+unlabeled', download=True,
+        #                                transform=SimCLRDataTransform(data_augment))
+        train_dataset = CellDataset(self.path, transform=SimCLRDataTransform(data_augment))
 
         train_loader, valid_loader = self.get_train_validation_data_loaders(train_dataset)
         return train_loader, valid_loader

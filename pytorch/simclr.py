@@ -84,7 +84,7 @@ class SimCLR(object):
         best_valid_loss = np.inf
 
         for epoch_counter in range(self.config['epochs']):
-            for (xis, xjs), _ in train_loader:
+            for (xis, xjs) in train_loader:
                 optimizer.zero_grad()
 
                 xis = xis.to(self.device)
@@ -142,7 +142,7 @@ class SimCLR(object):
 
             valid_loss = 0.0
             counter = 0
-            for (xis, xjs), _ in valid_loader:
+            for (xis, xjs) in valid_loader:
                 xis = xis.to(self.device)
                 xjs = xjs.to(self.device)
 
