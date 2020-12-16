@@ -114,14 +114,14 @@ class SimCLR(object):
                     torch.save(model.state_dict(), os.path.join(model_checkpoints_folder, 'model.pth'))
 
                 #self.writer.add_scalar('validation_loss', valid_loss, global_step=valid_n_iter)
-                print(f"validation_loss {valid_loss.item()}, iter {valid_n_iter}")
+                print(f"validation_loss {valid_loss}, iter {valid_n_iter}")
                 valid_n_iter += 1
 
             # warmup for the first 10 epochs
             if epoch_counter >= 10:
                 scheduler.step()
             #self.writer.add_scalar('cosine_lr_decay', scheduler.get_lr()[0], global_step=n_iter)
-            print(f"cosine_lr_decay {scheduler.get_lr()[0]}, epoch {epoch_counter}")
+            print(f"epoch {epoch_counter} end")
 
     def _load_pre_trained_weights(self, model):
         try:
