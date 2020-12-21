@@ -3,6 +3,7 @@ from models.resnet_simclr import ResNetSimCLR
 from torch.utils.tensorboard import SummaryWriter
 import torch.nn.functional as F
 from loss.nt_xent import NTXentLoss
+from feature_eval.random_forest_classifier import RFClassifier
 import os
 import shutil
 import sys
@@ -30,11 +31,12 @@ def _save_config_file(model_checkpoints_folder):
 
 class SimCLR(object):
 
-    def __init__(self, dataset, config):
+    def __init__(self, dataset, config, eval_dataset=None):
         self.config = config
         self.device = self._get_device()
         self.writer = SummaryWriter()
         self.dataset = dataset
+        self.eval_dataset = eval_dataset
         self.nt_xent_criterion = NTXentLoss(self.device, config['batch_size'], **config['loss'])
 
     def _get_device(self):
@@ -84,7 +86,7 @@ class SimCLR(object):
         best_valid_loss = np.inf
 
         for epoch_counter in range(self.config['epochs']):
-            for (xis, xjs) in train_loader:
+            for ((xis, xjs), _) in train_loader:
                 optimizer.zero_grad()
 
                 xis = xis.to(self.device)
@@ -117,6 +119,11 @@ class SimCLR(object):
                 print(f"validation_loss {valid_loss}, iter {valid_n_iter}")
                 valid_n_iter += 1
 
+            # train linear model if requested
+            if("eval_classifier_n_epoch" in self.config.keys() and
+                epoch_counter % self.config['eval_classifier_n_epoch'] == 0):
+                self._eval_classifier(model)
+
             # warmup for the first 10 epochs
             if epoch_counter >= 10:
                 scheduler.step()
@@ -142,7 +149,7 @@ class SimCLR(object):
 
             valid_loss = 0.0
             counter = 0
-            for (xis, xjs) in valid_loader:
+            for ((xis, xjs), _) in valid_loader:
                 xis = xis.to(self.device)
                 xjs = xjs.to(self.device)
 
@@ -152,3 +159,18 @@ class SimCLR(object):
             valid_loss /= counter
         model.train()
         return valid_loss
+
+    def _eval_classifier(self, model):
+        # validation steps
+        with torch.no_grad():
+            model.eval()
+
+            classifier = RFClassifier(model, self.device)
+            train_original, validate_original = self.eval_dataset.get_data_loaders()
+            print("RF classifier training started.")
+            classifier.train(train_original)
+            print("Training classifier done.")
+            score_eval = classifier.test(validate_original)
+            print(f"Classifier accuracy {score_eval}")
+
+        model.train()
