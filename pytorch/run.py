@@ -9,7 +9,7 @@ def main():
 
     debug_eval_dataset = None
     if "eval_classifier_n_epoch" in config.keys():
-        debug_eval_dataset = DataSetWrapper(config['batch_size'], **config['dataset'])
+        debug_eval_dataset = DataSetWrapper(config['batch_size'], **config['eval_dataset'])
 
     simclr = SimCLR(dataset, config, debug_eval_dataset)
     simclr.train()
