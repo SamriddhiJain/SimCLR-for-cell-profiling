@@ -26,10 +26,10 @@ class CellDataset(Dataset):
         self.train_images = dataframe['Image_Name']
 
         print(f"Total images: {len(self.train_images)}")
-        # self.images = []
-        # for im_name in self.train_images:
-        #     sample = self.load_image(self.root_dir+im_name)
-        #     self.images.extend(sample)
+        self.images = []
+        for im_name in self.train_images:
+            sample = self.load_image(self.root_dir+im_name)
+            self.images.append(sample)
 
     def __len__(self):
         return len(self.train_images)
@@ -38,8 +38,8 @@ class CellDataset(Dataset):
         if torch.is_tensor(idx):
             idx = idx.tolist()
 
-        # return self.images[idx], self.labels[idx]
-        return self.load_image(self.root_dir+self.train_images[idx]), self.labels[idx]
+        # return self.load_image(self.root_dir+self.train_images[idx]), self.labels[idx]
+        return self.images[idx], self.labels[idx]
 
     def load_image(self, path):
         image_string = torch.Tensor(io.imread(path))
