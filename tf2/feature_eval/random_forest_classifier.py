@@ -4,11 +4,10 @@ from sklearn.model_selection import KFold
 from sklearn.ensemble import RandomForestClassifier
 
 class RFClassifier(object):
-    def __init__(self, model, device):
+    def __init__(self, model):
         self.model = model
         self.rf = RandomForestClassifier(n_estimators = 100, random_state = 42)
         self.scaler = StandardScaler()
-        self.device = device
 
     def train(self, train_loader):
         X, Y = self.convert_tensor_to_np(train_loader)
