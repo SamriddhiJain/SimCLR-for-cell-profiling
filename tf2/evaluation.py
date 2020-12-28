@@ -29,39 +29,6 @@ def parse_cell_images(image_path):
     return image
 
 
-physical_devices = tf.config.experimental.list_physical_devices('GPU')
-print("Num GPUs:", len(physical_devices))
-
-metadata_path = "../single-cell-sample/sc-metadata.csv"
-dataframe = pd.read_csv(metadata_path)
-labels = dataframe['Target']
-train_images = ["../single-cell-sample/" + path for path in dataframe['Image_Name']]
-
-print("Number of images:", len(train_images))
-
-BATCH_SIZE = 128
-VALIDATION_FRAC = 0.3
-
-features_dataset = tf.data.Dataset.from_tensor_slices(train_images)
-features_dataset = (
-    features_dataset
-    .map(parse_cell_images, num_parallel_calls=tf.data.experimental.AUTOTUNE)
-)
-labels_dataset = tf.data.Dataset.from_tensor_slices(labels)
-
-full_ds = tf.data.Dataset.zip((features_dataset, labels_dataset))
-full_ds = (
-    full_ds
-    .shuffle(1024)
-    .batch(BATCH_SIZE, drop_remainder=True)
-    .prefetch(tf.data.experimental.AUTOTUNE)
-)
-
-# Train-test split
-train_ds = full_ds.take(int((1-VALIDATION_FRAC)*len(full_ds)))
-val_ds = full_ds.skip(int((1-VALIDATION_FRAC)*len(full_ds)))
-
-
 # Architecture utils
 def get_resnet_simclr(hidden_1, hidden_2, hidden_3):
     base_model = tf.keras.applications.ResNet50(include_top=False, weights=None, input_shape=(96, 96, 3))
@@ -114,6 +81,43 @@ def validate(model, train_dataset, validation_dataset):
 
 
 if __name__ == "__main__":
+
+    # Random seed fixation
+    tf.random.set_seed(666)
+    np.random.seed(666)
+
+    physical_devices = tf.config.experimental.list_physical_devices('GPU')
+    print("Num GPUs:", len(physical_devices))
+
+    metadata_path = "../single-cell-sample/sc-metadata.csv"
+    dataframe = pd.read_csv(metadata_path)
+    labels = dataframe['Target']
+    train_images = ["../single-cell-sample/" + path for path in dataframe['Image_Name']]
+
+    print("Number of images:", len(train_images))
+
+    BATCH_SIZE = 128
+    VALIDATION_FRAC = 0.3
+
+    features_dataset = tf.data.Dataset.from_tensor_slices(train_images)
+    features_dataset = (
+        features_dataset
+            .map(parse_cell_images, num_parallel_calls=tf.data.experimental.AUTOTUNE)
+    )
+    labels_dataset = tf.data.Dataset.from_tensor_slices(labels)
+
+    full_ds = tf.data.Dataset.zip((features_dataset, labels_dataset))
+    full_ds = (
+        full_ds
+            .shuffle(1024)
+            .batch(BATCH_SIZE, drop_remainder=True)
+            .prefetch(tf.data.experimental.AUTOTUNE)
+    )
+
+    # Train-test split
+    train_ds = full_ds.take(int((1 - VALIDATION_FRAC) * len(full_ds)))
+    val_ds = full_ds.skip(int((1 - VALIDATION_FRAC) * len(full_ds)))
+
     epoch_list = [50, 100, 150, 200, 250, 300, 350, 400, 450, 500]
     model = get_resnet_simclr(256, 128, 50)
     for epoch in tqdm(epoch_list):

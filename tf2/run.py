@@ -1,4 +1,9 @@
+import tensorflow as tf
+import numpy as np
+import pandas as pd
+
 from train import train_model
+
 
 physical_devices = tf.config.experimental.list_physical_devices('GPU')
 print("Num GPUs:", len(physical_devices))
@@ -59,16 +64,17 @@ def get_separated_dataset(train_path, validation_path):
     features_dataset = tf.data.Dataset.from_tensor_slices(train_images)
     features_dataset = (
         features_dataset
-            .map(parse_cell_images, num_parallel_calls=tf.data.experimental.AUTOTUNE)
+        .map(parse_cell_images, num_parallel_calls=tf.data.experimental.AUTOTUNE)
+        .cache()
     )
     labels_dataset = tf.data.Dataset.from_tensor_slices(train_labels)
 
     train_ds = tf.data.Dataset.zip((features_dataset, labels_dataset))
     train_ds = (
         train_ds
-            .shuffle(1024)
-            .batch(BATCH_SIZE, drop_remainder=True)
-            .prefetch(tf.data.experimental.AUTOTUNE)
+        .shuffle(20480)
+        .batch(BATCH_SIZE, drop_remainder=True)
+        .prefetch(tf.data.experimental.AUTOTUNE)
     )
 
     # Validation
@@ -80,14 +86,15 @@ def get_separated_dataset(train_path, validation_path):
     features_dataset = tf.data.Dataset.from_tensor_slices(val_images)
     features_dataset = (
         features_dataset
-            .map(parse_cell_images, num_parallel_calls=tf.data.experimental.AUTOTUNE)
+        .map(parse_cell_images, num_parallel_calls=tf.data.experimental.AUTOTUNE)
+        .cache()
     )
     labels_dataset = tf.data.Dataset.from_tensor_slices(val_labels)
 
     val_ds = tf.data.Dataset.zip((features_dataset, labels_dataset))
     val_ds = (
         val_ds
-            .shuffle(1024)
+            .shuffle(10240)
             .batch(BATCH_SIZE, drop_remainder=True)
             .prefetch(tf.data.experimental.AUTOTUNE)
     )
@@ -95,13 +102,13 @@ def get_separated_dataset(train_path, validation_path):
     return train_ds, val_ds
 
 
-# Train-test split data
-data_path = "../single-cell-sample/"
-train_ds, val_ds = get_splitted_dataset(data_path)
+# # Train-test split data
+# data_path = "../single-cell-sample/"
+# train_ds, val_ds = get_splitted_dataset(data_path)
 
 # Separated data
-train_path = "../single-cell-train/"
-validation_path = "../single-cell-test/"
+train_path = "/cluster/scratch/agorji/cropped/single-cell-train/"
+validation_path = "/cluster/scratch/agorji/cropped/single-cell-test/"
 
 train_ds, val_ds = get_separated_dataset(train_path, validation_path)
 

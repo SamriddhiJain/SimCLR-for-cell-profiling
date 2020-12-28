@@ -81,12 +81,10 @@ def get_resnet_simclr(hidden_1, hidden_2, hidden_3):
     return resnet_simclr
 
 
-# Mask to remove positive examples from the batch of negative samples
-negative_mask = helpers.get_negative_mask(BATCH_SIZE)
-
-
 @tf.function
-def train_step(xis, xjs, model, optimizer, criterion, temperature):
+def train_step(xis, xjs, model, optimizer, criterion, temperature, batch_size):
+    # Mask to remove positive examples from the batch of negative samples
+    negative_mask = helpers.get_negative_mask(batch_size)
     with tf.GradientTape() as tape:
         zis = model(xis)
         zjs = model(xjs)
@@ -96,7 +94,7 @@ def train_step(xis, xjs, model, optimizer, criterion, temperature):
         zjs = tf.math.l2_normalize(zjs, axis=1)
 
         l_pos = sim_func_dim1(zis, zjs)
-        l_pos = tf.reshape(l_pos, (BATCH_SIZE, 1))
+        l_pos = tf.reshape(l_pos, (batch_size, 1))
         l_pos /= temperature
 
         negatives = tf.concat([zjs, zis], axis=0)
@@ -106,16 +104,16 @@ def train_step(xis, xjs, model, optimizer, criterion, temperature):
         for positives in [zis, zjs]:
             l_neg = sim_func_dim2(positives, negatives)
 
-            labels = tf.zeros(BATCH_SIZE, dtype=tf.int32)
+            labels = tf.zeros(batch_size, dtype=tf.int32)
 
             l_neg = tf.boolean_mask(l_neg, negative_mask)
-            l_neg = tf.reshape(l_neg, (BATCH_SIZE, -1))
+            l_neg = tf.reshape(l_neg, (batch_size, -1))
             l_neg /= temperature
 
             logits = tf.concat([l_pos, l_neg], axis=1)
             loss += criterion(y_pred=logits, y_true=labels)
 
-        loss = loss / (2 * BATCH_SIZE)
+        loss = loss / (2 * batch_size)
 
     gradients = tape.gradient(loss, model.trainable_variables)
     optimizer.apply_gradients(zip(gradients, model.trainable_variables))
@@ -123,7 +121,7 @@ def train_step(xis, xjs, model, optimizer, criterion, temperature):
     return loss
 
 
-def train_simclr(model, train_ds, val_ds, optimizer, criterion, save_path,
+def train_simclr(model, train_ds, val_ds, optimizer, criterion, save_path, batch_size,
                  temperature=0.1, epochs=100, start=0):
     step_wise_loss = []
     epoch_wise_loss = []
@@ -133,7 +131,7 @@ def train_simclr(model, train_ds, val_ds, optimizer, criterion, save_path,
             a = data_augmentation(image_batch)
             b = data_augmentation(image_batch)
 
-            loss = train_step(a, b, model, optimizer, criterion, temperature)
+            loss = train_step(a, b, model, optimizer, criterion, temperature, batch_size)
             del a
             del b
             step_wise_loss.append(loss)
@@ -141,20 +139,22 @@ def train_simclr(model, train_ds, val_ds, optimizer, criterion, save_path,
         epoch_wise_loss.append(np.mean(step_wise_loss))
         #wandb.log({"nt_xentloss": np.mean(step_wise_loss)})
 
-        if epoch % 10 == 0:
+        if (epoch + 1) % 10 == 0:
             print("epoch: {} loss: {:.3f}".format(epoch + 1, np.mean(step_wise_loss)))
 
-        if epoch % 50 == 0:
+        if (epoch + 1) % 50 == 0:
             print("Saving checkpoint")
             model.save_weights(save_path.format(epoch))
-            with open("last_run_losses_epoch{}.pkl".format(epoch), "wb") as fp:
+            with open("last_run_losses_epoch{}.pkl".format((epoch + 1)), "wb") as fp:
                 pickle.dump(epoch_wise_loss, fp)
-            validate(model, train_ds, val_ds)
+            score = validate(model, train_ds, val_ds)
+            print("Random forest score epoch {epoch}:".format(epoch=(epoch + 1)), score)
 
     return epoch_wise_loss, model
 
 
-def train_model(train_ds, val_ds, epochs, checkpoint_path, initial_learning_rate=0.1, start=0, decay_steps=1000):
+def train_model(train_ds, val_ds, epochs, checkpoint_path,
+                initial_learning_rate=0.1, start=0, decay_steps=1000, batch_size=128):
     criterion = tf.keras.losses.SparseCategoricalCrossentropy(from_logits=True,
                                                               reduction=tf.keras.losses.Reduction.SUM)
     lr_decayed_fn = tf.keras.experimental.CosineDecay(
@@ -165,5 +165,6 @@ def train_model(train_ds, val_ds, epochs, checkpoint_path, initial_learning_rate
     if start > 0:
         resnet_simclr_2.load_weights(checkpoint_path.format(start))
 
-    epoch_wise_loss, resnet_simclr  = train_simclr(resnet_simclr_2, train_ds, val_ds, optimizer, checkpoint_path,
-                                                   criterion, temperature=0.1, epochs=epochs, start=start)
+    epoch_wise_loss, resnet_simclr  = train_simclr(resnet_simclr_2, train_ds, val_ds, optimizer, criterion,
+                                                   checkpoint_path, batch_size,
+                                                   temperature=0.1, epochs=epochs, start=start)
