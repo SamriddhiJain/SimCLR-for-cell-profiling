@@ -1,15 +1,18 @@
+import datetime
+
 import tensorflow as tf
+
+from evaluation import validate
+
 print(tf.__version__)
 
 from tensorflow.keras.layers import *
 from tensorflow.keras.models import *
-import matplotlib.pyplot as plt
-from imutils import paths
 from tqdm import tqdm
 import tensorflow as tf
 import numpy as np
 import pickle
-import h5py
+import pandas as pd
 
 from losses import _dot_simililarity_dim1 as sim_func_dim1, _dot_simililarity_dim2 as sim_func_dim2
 import helpers
@@ -76,19 +79,34 @@ np.random.seed(666)
 # Build the augmentation pipeline
 data_augmentation = Sequential([Lambda(CustomAugment())])
 
-train_images = list(paths.list_images("../single-cell-sample/"))
+metadata_path = "../single-cell-sample/sc-metadata.csv"
+dataframe = pd.read_csv(metadata_path)
+labels = dataframe['Target']
+train_images = ["../single-cell-sample/" + path for path in dataframe['Image_Name']]
+
 print("Number of images:", len(train_images))
 
 BATCH_SIZE = 128
+VALIDATION_FRAC = 0.3
 
-train_ds = tf.data.Dataset.from_tensor_slices(train_images)
-train_ds = (
-    train_ds
+features_dataset = tf.data.Dataset.from_tensor_slices(train_images)
+features_dataset = (
+    features_dataset
     .map(parse_cell_images, num_parallel_calls=tf.data.experimental.AUTOTUNE)
+)
+labels_dataset = tf.data.Dataset.from_tensor_slices(labels)
+
+full_ds = tf.data.Dataset.zip((features_dataset, labels_dataset))
+full_ds = (
+    full_ds
     .shuffle(1024)
     .batch(BATCH_SIZE, drop_remainder=True)
     .prefetch(tf.data.experimental.AUTOTUNE)
 )
+
+# Train-test split
+train_ds = full_ds.take(int((1-VALIDATION_FRAC)*len(full_ds)))
+val_ds = full_ds.skip(int((1-VALIDATION_FRAC)*len(full_ds)))
 
 
 # Architecture utils
@@ -158,7 +176,7 @@ def train_simclr(model, dataset, optimizer, criterion,
     epoch_wise_loss = []
 
     for epoch in tqdm(range(start, epochs)):
-        for image_batch in dataset:
+        for image_batch, label_batch in dataset:
             a = data_augmentation(image_batch)
             b = data_augmentation(image_batch)
 
@@ -175,9 +193,10 @@ def train_simclr(model, dataset, optimizer, criterion,
 
         if epoch % 50 == 0:
             print("Saving checkpoint")
-            model.save_weights("resnet_simclr_epoch{}.h5".format(epoch))
+            model.save_weights("splitted_simclr_epoch{}.h5".format(epoch))
             with open("simclr_losses_epoch{}.pkl".format(epoch), "wb") as fp:
                 pickle.dump(epoch_wise_loss, fp)
+            validate(model, train_ds, val_ds)
 
     return epoch_wise_loss, model
 
@@ -195,8 +214,7 @@ resnet_simclr_2 = get_resnet_simclr(256, 128, 50)
 
 
 epoch_wise_loss, resnet_simclr  = train_simclr(resnet_simclr_2, train_ds, optimizer, criterion,
-                 temperature=0.1, epochs=500, start=start)
+                 temperature=0.1, epochs=301, start=start)
 
-import datetime
-filename = datetime.datetime.now().strftime("%Y%m%d-%H%M%S") + "resnet_simclr.h5"
+filename = datetime.datetime.now().strftime("%Y%m%d-%H%M%S") + "splitted_simclr.h5"
 resnet_simclr_2.save_weights(filename)

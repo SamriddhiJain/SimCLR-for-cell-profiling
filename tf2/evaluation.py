@@ -40,6 +40,7 @@ train_images = ["../single-cell-sample/" + path for path in dataframe['Image_Nam
 print("Number of images:", len(train_images))
 
 BATCH_SIZE = 128
+VALIDATION_FRAC = 0.3
 
 features_dataset = tf.data.Dataset.from_tensor_slices(train_images)
 features_dataset = (
@@ -48,13 +49,17 @@ features_dataset = (
 )
 labels_dataset = tf.data.Dataset.from_tensor_slices(labels)
 
-train_ds = tf.data.Dataset.zip((features_dataset, labels_dataset))
-train_ds = (
-    train_ds
+full_ds = tf.data.Dataset.zip((features_dataset, labels_dataset))
+full_ds = (
+    full_ds
     .shuffle(1024)
     .batch(BATCH_SIZE, drop_remainder=True)
     .prefetch(tf.data.experimental.AUTOTUNE)
 )
+
+# Train-test split
+train_ds = full_ds.take(int((1-VALIDATION_FRAC)*len(full_ds)))
+val_ds = full_ds.skip(int((1-VALIDATION_FRAC)*len(full_ds)))
 
 
 # Architecture utils
@@ -76,12 +81,9 @@ def get_resnet_simclr(hidden_1, hidden_2, hidden_3):
     return resnet_simclr
 
 
-def train_validate_rf(data, labels):
+def train_validate_rf(X_train, X_test, y_train, y_test):
     rf = RandomForestClassifier(n_estimators=100, random_state=42)
     scaler = StandardScaler()
-
-    X_train, X_test, y_train, y_test = \
-        train_test_split(data, labels, test_size=0.33, random_state=42)
 
     print("Train size:", len(y_train))
     print("Test size:", len(y_test))
@@ -95,16 +97,20 @@ def train_validate_rf(data, labels):
     return rf.score(X_test, y_test)
 
 
-def validate(model, dataset):
+def extract_representations(model, dataset):
     embeddings = []
     labels = []
     for image_batch, label_batch in tqdm(dataset):
         embedding_batch = model(image_batch)
         embeddings.extend(embedding_batch.numpy())
         labels.extend(label_batch)
-    print(np.array(embeddings).shape)
-    print(np.array(labels).shape)
-    return train_validate_rf(np.array(embeddings), labels)
+    return np.array(embeddings), np.array(labels)
+
+
+def validate(model, train_dataset, validation_dataset):
+    train_rep, train_labels = extract_representations(model, train_dataset)
+    validation_rep, validation_labels = extract_representations(model, validation_dataset)
+    return train_validate_rf(train_rep, validation_rep, train_labels, validation_labels)
 
 
 epoch_list = [50, 100, 150, 200, 250, 300, 350, 400, 450, 500]
