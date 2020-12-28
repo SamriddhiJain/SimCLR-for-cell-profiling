@@ -55,59 +55,12 @@ class CustomAugment(object):
           lambda: func(x),
           lambda: x)
 
-
-@tf.function
-def parse_cell_images(image_path):
-    image_string = tf.io.read_file(image_path)
-    image = tf.image.decode_png(image_string, channels=1)
-    image = tf.squeeze(image)
-    image = tf.split(image, 3, axis=1)
-    image = tf.transpose(image, [1,2,0])
-    image = tf.image.convert_image_dtype(image, tf.float32)
-    image = tf.image.resize(image, size=[96, 96])
-
-    return image
-
-
-physical_devices = tf.config.experimental.list_physical_devices('GPU')
-print("Num GPUs:", len(physical_devices))
-
 # Random seed fixation
 tf.random.set_seed(666)
 np.random.seed(666)
 
 # Build the augmentation pipeline
 data_augmentation = Sequential([Lambda(CustomAugment())])
-
-metadata_path = "../single-cell-sample/sc-metadata.csv"
-dataframe = pd.read_csv(metadata_path)
-labels = dataframe['Target']
-train_images = ["../single-cell-sample/" + path for path in dataframe['Image_Name']]
-
-print("Number of images:", len(train_images))
-
-BATCH_SIZE = 128
-VALIDATION_FRAC = 0.3
-
-features_dataset = tf.data.Dataset.from_tensor_slices(train_images)
-features_dataset = (
-    features_dataset
-    .map(parse_cell_images, num_parallel_calls=tf.data.experimental.AUTOTUNE)
-)
-labels_dataset = tf.data.Dataset.from_tensor_slices(labels)
-
-full_ds = tf.data.Dataset.zip((features_dataset, labels_dataset))
-full_ds = (
-    full_ds
-    .shuffle(1024)
-    .batch(BATCH_SIZE, drop_remainder=True)
-    .prefetch(tf.data.experimental.AUTOTUNE)
-)
-
-# Train-test split
-train_ds = full_ds.take(int((1-VALIDATION_FRAC)*len(full_ds)))
-val_ds = full_ds.skip(int((1-VALIDATION_FRAC)*len(full_ds)))
-
 
 # Architecture utils
 def get_resnet_simclr(hidden_1, hidden_2, hidden_3):
@@ -170,13 +123,13 @@ def train_step(xis, xjs, model, optimizer, criterion, temperature):
     return loss
 
 
-def train_simclr(model, dataset, optimizer, criterion,
+def train_simclr(model, train_ds, val_ds, optimizer, criterion, save_path,
                  temperature=0.1, epochs=100, start=0):
     step_wise_loss = []
     epoch_wise_loss = []
 
     for epoch in tqdm(range(start, epochs)):
-        for image_batch, label_batch in dataset:
+        for image_batch, label_batch in train_ds:
             a = data_augmentation(image_batch)
             b = data_augmentation(image_batch)
 
@@ -193,28 +146,24 @@ def train_simclr(model, dataset, optimizer, criterion,
 
         if epoch % 50 == 0:
             print("Saving checkpoint")
-            model.save_weights("splitted_simclr_epoch{}.h5".format(epoch))
-            with open("simclr_losses_epoch{}.pkl".format(epoch), "wb") as fp:
+            model.save_weights(save_path.format(epoch))
+            with open("last_run_losses_epoch{}.pkl".format(epoch), "wb") as fp:
                 pickle.dump(epoch_wise_loss, fp)
             validate(model, train_ds, val_ds)
 
     return epoch_wise_loss, model
 
 
-criterion = tf.keras.losses.SparseCategoricalCrossentropy(from_logits=True,
-                                                          reduction=tf.keras.losses.Reduction.SUM)
-decay_steps = 1000
-lr_decayed_fn = tf.keras.experimental.CosineDecay(
-    initial_learning_rate=0.1, decay_steps=decay_steps)
-optimizer = tf.keras.optimizers.SGD(lr_decayed_fn)
+def train_model(train_ds, val_ds, epochs, checkpoint_path, initial_learning_rate=0.1, start=0, decay_steps=1000):
+    criterion = tf.keras.losses.SparseCategoricalCrossentropy(from_logits=True,
+                                                              reduction=tf.keras.losses.Reduction.SUM)
+    lr_decayed_fn = tf.keras.experimental.CosineDecay(
+        initial_learning_rate=initial_learning_rate, decay_steps=decay_steps)
+    optimizer = tf.keras.optimizers.SGD(lr_decayed_fn)
 
-start = 0
-resnet_simclr_2 = get_resnet_simclr(256, 128, 50)
-#resnet_simclr_2.load_weights("resnet_simclr_epoch{}.h5".format(start))
+    resnet_simclr_2 = get_resnet_simclr(256, 128, 50)
+    if start > 0:
+        resnet_simclr_2.load_weights(checkpoint_path.format(start))
 
-
-epoch_wise_loss, resnet_simclr  = train_simclr(resnet_simclr_2, train_ds, optimizer, criterion,
-                 temperature=0.1, epochs=301, start=start)
-
-filename = datetime.datetime.now().strftime("%Y%m%d-%H%M%S") + "splitted_simclr.h5"
-resnet_simclr_2.save_weights(filename)
+    epoch_wise_loss, resnet_simclr  = train_simclr(resnet_simclr_2, train_ds, val_ds, optimizer, checkpoint_path,
+                                                   criterion, temperature=0.1, epochs=epochs, start=start)

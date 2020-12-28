@@ -100,7 +100,7 @@ def train_validate_rf(X_train, X_test, y_train, y_test):
 def extract_representations(model, dataset):
     embeddings = []
     labels = []
-    for image_batch, label_batch in tqdm(dataset):
+    for image_batch, label_batch in dataset:
         embedding_batch = model(image_batch)
         embeddings.extend(embedding_batch.numpy())
         labels.extend(label_batch)
@@ -113,9 +113,10 @@ def validate(model, train_dataset, validation_dataset):
     return train_validate_rf(train_rep, validation_rep, train_labels, validation_labels)
 
 
-epoch_list = [50, 100, 150, 200, 250, 300, 350, 400, 450, 500]
-model = get_resnet_simclr(256, 128, 50)
-for epoch in tqdm(epoch_list):
-    model.load_weights("resnet_simclr_epoch{}.h5".format(epoch))
-    score = validate(model, train_ds)
-    print("Random forest score epoch {epoch}:".format(epoch=epoch), score)
+if __name__ == "__main__":
+    epoch_list = [50, 100, 150, 200, 250, 300, 350, 400, 450, 500]
+    model = get_resnet_simclr(256, 128, 50)
+    for epoch in tqdm(epoch_list):
+        model.load_weights("resnet_simclr_epoch{}.h5".format(epoch))
+        score = validate(model, train_ds, val_ds)
+        print("Random forest score epoch {epoch}:".format(epoch=epoch), score)
