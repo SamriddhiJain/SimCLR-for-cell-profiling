@@ -11,11 +11,10 @@ from imutils import paths
 from tqdm import tqdm
 import tensorflow as tf
 import numpy as np
-import pickle
-import h5py
-
-from losses import _dot_simililarity_dim1 as sim_func_dim1, _dot_simililarity_dim2 as sim_func_dim2
-import helpers
+import pandas as pd
+from sklearn.preprocessing import StandardScaler
+from sklearn.model_selection import train_test_split
+from sklearn.ensemble import RandomForestClassifier
 
 @tf.function
 def parse_cell_images(image_path):
@@ -33,15 +32,25 @@ def parse_cell_images(image_path):
 physical_devices = tf.config.experimental.list_physical_devices('GPU')
 print("Num GPUs:", len(physical_devices))
 
-train_images = list(paths.list_images("../single-cell-sample/"))
+metadata_path = "../single-cell-sample/sc-metadata.csv"
+dataframe = pd.read_csv(metadata_path)
+labels = dataframe['Target']
+train_images = ["../single-cell-sample/" + path for path in dataframe['Image_Name']]
+
 print("Number of images:", len(train_images))
 
 BATCH_SIZE = 128
 
-train_ds = tf.data.Dataset.from_tensor_slices(train_images)
+features_dataset = tf.data.Dataset.from_tensor_slices(train_images)
+features_dataset = (
+    features_dataset
+    .map(parse_cell_images, num_parallel_calls=tf.data.experimental.AUTOTUNE)
+)
+labels_dataset = tf.data.Dataset.from_tensor_slices(labels)
+
+train_ds = tf.data.Dataset.zip((features_dataset, labels_dataset))
 train_ds = (
     train_ds
-    .map(parse_cell_images, num_parallel_calls=tf.data.experimental.AUTOTUNE)
     .shuffle(1024)
     .batch(BATCH_SIZE, drop_remainder=True)
     .prefetch(tf.data.experimental.AUTOTUNE)
@@ -67,109 +76,40 @@ def get_resnet_simclr(hidden_1, hidden_2, hidden_3):
     return resnet_simclr
 
 
-# Mask to remove positive examples from the batch of negative samples
-negative_mask = helpers.get_negative_mask(BATCH_SIZE)
+def train_validate_rf(data, labels):
+    rf = RandomForestClassifier(n_estimators=100, random_state=42)
+    scaler = StandardScaler()
 
+    X_train, X_test, y_train, y_test = \
+        train_test_split(data, labels, test_size=0.33, random_state=42)
 
-@tf.function
-def train_step(xis, xjs, model, optimizer, criterion, temperature):
-    with tf.GradientTape() as tape:
-        zis = model(xis)
-        zjs = model(xjs)
-
-        # normalize projection feature vectors
-        zis = tf.math.l2_normalize(zis, axis=1)
-        zjs = tf.math.l2_normalize(zjs, axis=1)
-
-        l_pos = sim_func_dim1(zis, zjs)
-        l_pos = tf.reshape(l_pos, (BATCH_SIZE, 1))
-        l_pos /= temperature
-
-        negatives = tf.concat([zjs, zis], axis=0)
-
-        loss = 0
-
-        for positives in [zis, zjs]:
-            l_neg = sim_func_dim2(positives, negatives)
-
-            labels = tf.zeros(BATCH_SIZE, dtype=tf.int32)
-
-            l_neg = tf.boolean_mask(l_neg, negative_mask)
-            l_neg = tf.reshape(l_neg, (BATCH_SIZE, -1))
-            l_neg /= temperature
-
-            logits = tf.concat([l_pos, l_neg], axis=1)
-            loss += criterion(y_pred=logits, y_true=labels)
-
-        loss = loss / (2 * BATCH_SIZE)
-
-    gradients = tape.gradient(loss, model.trainable_variables)
-    optimizer.apply_gradients(zip(gradients, model.trainable_variables))
-
-    return loss
-
-
-def train_simclr(model, dataset, optimizer, criterion,
-                 temperature=0.1, epochs=100, start=0):
-    step_wise_loss = []
-    epoch_wise_loss = []
-
-    for epoch in tqdm(range(start, epochs)):
-        for image_batch in dataset:
-            a = data_augmentation(image_batch)
-            b = data_augmentation(image_batch)
-
-            loss = train_step(a, b, model, optimizer, criterion, temperature)
-            del a
-            del b
-            step_wise_loss.append(loss)
-
-        epoch_wise_loss.append(np.mean(step_wise_loss))
-        #wandb.log({"nt_xentloss": np.mean(step_wise_loss)})
-
-        if epoch % 10 == 0:
-            print("epoch: {} loss: {:.3f}".format(epoch + 1, np.mean(step_wise_loss)))
-
-        if epoch % 50 == 0:
-            print("Saving checkpoint")
-            model.save_weights("resnet_simclr_epoch{}.h5".format(epoch))
-            with open("simclr_losses_epoch{}.pkl".format(epoch), "wb") as fp:
-                pickle.dump(epoch_wise_loss, fp)
-
-    return epoch_wise_loss, model
+    print("Train size:", len(y_train))
+    print("Test size:", len(y_test))
+    print("RF classifier training started.")
+    scaler.fit(X_train)
+    X_train = scaler.transform(X_train)
+    rf.fit(X_train, y_train)
+    print("Training classifier done.")
+    scaler.fit(X_test)
+    X_test = scaler.transform(X_test)
+    return rf.score(X_test, y_test)
 
 
 def validate(model, dataset):
     embeddings = []
-    for image_batch in dataset:
+    labels = []
+    for image_batch, label_batch in tqdm(dataset):
         embedding_batch = model(image_batch)
-        print(embedding_batch)
-        print(embedding_batch.shape)
-        embeddings.extend(embedding_batch)
-    classifier = RFClassifier(model)
-    train_original, validate_original = self.eval_dataset.get_data_loaders()
-    print("RF classifier training started.")
-    classifier.train(train_original)
-    print("Training classifier done.")
-    score_eval = classifier.test(validate_original)
-    print(f"Classifier accuracy {score_eval}")
+        embeddings.extend(embedding_batch.numpy())
+        labels.extend(label_batch)
+    print(np.array(embeddings).shape)
+    print(np.array(labels).shape)
+    return train_validate_rf(np.array(embeddings), labels)
 
-
-criterion = tf.keras.losses.SparseCategoricalCrossentropy(from_logits=True,
-                                                          reduction=tf.keras.losses.Reduction.SUM)
-decay_steps = 1000
-lr_decayed_fn = tf.keras.experimental.CosineDecay(
-    initial_learning_rate=0.1, decay_steps=decay_steps)
-optimizer = tf.keras.optimizers.SGD(lr_decayed_fn)
 
 epoch_list = [50, 100, 150, 200, 250, 300, 350, 400, 450, 500]
 model = get_resnet_simclr(256, 128, 50)
-model.load_weights("resnet_simclr_epoch{}.h5".format(start))
-
-rep = model(xis)
-epoch_wise_loss, resnet_simclr  = train_simclr(model, train_ds, optimizer, criterion,
-                                               temperature=0.1, epochs=500, start=start)
-
-import datetime
-filename = datetime.datetime.now().strftime("%Y%m%d-%H%M%S") + "resnet_simclr.h5"
-model.save_weights(filename)
+for epoch in tqdm(epoch_list):
+    model.load_weights("resnet_simclr_epoch{}.h5".format(epoch))
+    score = validate(model, train_ds)
+    print("Random forest score epoch {epoch}:".format(epoch=epoch), score)
