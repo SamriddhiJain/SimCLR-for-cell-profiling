@@ -7,8 +7,8 @@ class ResNetSimCLR(nn.Module):
 
     def __init__(self, base_model, out_dim):
         super(ResNetSimCLR, self).__init__()
-        self.resnet_dict = {"resnet18": models.resnet18(pretrained=False),
-                            "resnet50": models.resnet50(pretrained=False)}
+        self.resnet_dict = {"resnet18": models.resnet18(pretrained=True),
+                            "resnet50": models.resnet50(pretrained=True)}
 
         resnet = self._get_basemodel(base_model)
         num_ftrs = resnet.fc.in_features

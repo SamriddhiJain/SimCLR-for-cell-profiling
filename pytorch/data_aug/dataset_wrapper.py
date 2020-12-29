@@ -18,7 +18,8 @@ class DataSetWrapper(object):
         self.input_shape = eval(input_shape)
 
     def get_data_loaders(self):
-        composed = transforms.Compose([transforms.ToTensor()])
+        composed = transforms.Compose([transforms.ToTensor(),
+                                        transforms.Normalize((0.7469, 0.7403, 0.7307), (0.1548, 0.1594, 0.1706))])
         train_dataset = CellDataset(self.path, self.root_dir, self.input_shape,
                                     transform=composed)
 
