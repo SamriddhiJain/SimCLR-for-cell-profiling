@@ -22,19 +22,20 @@ def get_data():
     return loader
 
 def convert_tensor_to_np(model, data_loader):
-        train_feature_vector = []
-        train_labels_vector = []
-        for batch_x, batch_y in data_loader:
-          batch_x = batch_x.to("cuda")
-          train_labels_vector.extend(batch_y)
-          features, full_features = model(batch_x)
+    train_feature_vector = []
+    train_labels_vector = []
+    model.eval()
+    for batch_x, batch_y in data_loader:
+      batch_x = batch_x.to("cuda")
+      train_labels_vector.extend(batch_y)
+      features, full_features = model(batch_x)
 
-          train_feature_vector.extend(features.cpu().detach().numpy())
+      train_feature_vector.extend(features.cpu().detach().numpy())
 
-        train_feature_vector = np.array(train_feature_vector)
-        train_labels_vector = np.array(train_labels_vector)
+    train_feature_vector = np.array(train_feature_vector)
+    train_labels_vector = np.array(train_labels_vector)
 
-        return train_feature_vector, train_labels_vector
+    return train_feature_vector, train_labels_vector
 
 def main():
     config = yaml.load(open("config.yaml", "r"))

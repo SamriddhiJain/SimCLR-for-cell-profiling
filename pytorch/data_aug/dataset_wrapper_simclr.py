@@ -28,7 +28,7 @@ class DataSetWrapperSimCLR(DataSetWrapper):
         # get a set of data augmentation transformations as described in the SimCLR paper.
         color_jitter = transforms.ColorJitter(0.8 * self.s, 0.8 * self.s, 0.8 * self.s, 0.2 * self.s)
         data_transforms = transforms.Compose([transforms.RandomResizedCrop(size=self.input_shape[0]),
-                                              # transforms.RandomHorizontalFlip(),
+                                              transforms.RandomHorizontalFlip(),
                                               transforms.RandomApply([color_jitter], p=0.8),
                                               transforms.RandomGrayscale(p=0.2),
                                               GaussianBlur(kernel_size=int(0.1 * self.input_shape[0])),
