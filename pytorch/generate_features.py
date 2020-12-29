@@ -37,9 +37,9 @@ def convert_tensor_to_np(model, data_loader):
         return train_feature_vector, train_labels_vector
 
 def main():
-    config = yaml.load(open("config.yaml", "r"), Loader=yaml.FullLoader)
+    config = yaml.load(open("config.yaml", "r"))
 
-    model = ResNetSimCLR(config["base_model"], config["out_dim"]).to("cuda")
+    model = ResNetSimCLR(config["model"]["base_model"], config["model"]["out_dim"]).to("cuda")
     # update model path
     state_dict = torch.load("runs/Dec28_19-51-34_c520871eabf7/checkpoints/model_latest.pth")
     model.load_state_dict(state_dict)
