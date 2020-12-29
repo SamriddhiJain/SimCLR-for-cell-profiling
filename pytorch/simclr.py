@@ -128,6 +128,7 @@ class SimCLR(object):
             if epoch_counter >= 10:
                 scheduler.step()
             #self.writer.add_scalar('cosine_lr_decay', scheduler.get_lr()[0], global_step=n_iter)
+            torch.save(model.state_dict(), os.path.join(model_checkpoints_folder, 'model_latest.pth'))
             print(f"epoch {epoch_counter} end")
 
     def _load_pre_trained_weights(self, model):
