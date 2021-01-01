@@ -18,6 +18,8 @@ dataset:
   input_shape: (96,96,3)
   num_workers: 0
   valid_size: 0.05
+  sampler: random
+  preload: True
 
 eval_dataset:
   path: 'single-cell-sample/sc-metadata.csv'

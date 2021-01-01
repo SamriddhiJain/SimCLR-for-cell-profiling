@@ -12,9 +12,10 @@ def get_data():
     data_transforms = transforms.Compose([transforms.ToTensor(),
                                         transforms.Normalize((0.7469, 0.7403, 0.7307), (0.1548, 0.1594, 0.1706))])
     dataset = CellDataset('single-cell-sample-test/sc-metadata.csv',
-                            'single-cell-sample-test/',
-                            [96,96,3],
-                            transform=data_transforms)
+                          'single-cell-sample-test/',
+                          [96,96,3],
+                          preload=True,
+                          transform=data_transforms)
     loader = DataLoader(
         dataset,
         batch_size=512,
