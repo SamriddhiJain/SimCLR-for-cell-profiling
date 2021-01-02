@@ -24,7 +24,7 @@ class DataSetWrapper(object):
     def get_data_loaders(self):
         composed = transforms.Compose([transforms.ToTensor(),
                                         transforms.Normalize((0.7469, 0.7403, 0.7307), (0.1548, 0.1594, 0.1706))])
-        train_dataset = CellDataset(self.path, self.root_dir, self.input_shape, self.preload,
+        train_dataset = CellDataset(self.path, self.root_dir, self.input_shape, self.preload, self.num_workers,
                                     transform=composed)
 
         train_loader, valid_loader = self.get_train_validation_data_loaders(train_dataset)

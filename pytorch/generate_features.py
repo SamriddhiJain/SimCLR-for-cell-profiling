@@ -15,6 +15,7 @@ def get_data():
                           'single-cell-sample-test/',
                           [96,96,3],
                           preload=True,
+                          num_workers=1,
                           transform=data_transforms)
     loader = DataLoader(
         dataset,

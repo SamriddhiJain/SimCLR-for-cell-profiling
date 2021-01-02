@@ -1,5 +1,5 @@
 batch_size: 256
-epochs: 500
+epochs: 300
 eval_every_n_epochs: 1
 fine_tune_from: None
 log_every_n_steps: 50
@@ -9,25 +9,27 @@ fp16_precision: False
 
 model:
   out_dim: 256
-  base_model: "resnet18"
+  base_model: "resnet50"
 
 dataset:
-  path: 'single-cell-sample/sc-metadata.csv'
-  root_dir: 'single-cell-sample/'
+  path: '../single-cell-sample-train/sc-metadata.csv'
+  root_dir: '../single-cell-sample-train/'
   s: 1
   input_shape: (96,96,3)
-  num_workers: 0
+  num_workers: 4
   valid_size: 0.05
-  sampler: random
+  sampler: "random"
   preload: True
 
 eval_dataset:
-  path: 'single-cell-sample/sc-metadata.csv'
-  root_dir: 'single-cell-sample/'
+  path: '../single-cell-sample-train/sc-metadata.csv'
+  root_dir: '../single-cell-sample-train/'
   input_shape: (96,96,3)
   num_workers: 0
   valid_size: 0.3
+  sampler: "random"
+  preload: True
 
 loss:
-  temperature: 0.5
+  temperature: 0.1
   use_cosine_similarity: True
