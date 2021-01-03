@@ -6,6 +6,7 @@ log_every_n_steps: 50
 weight_decay: 10e-6
 fp16_precision: False
 #eval_classifier_n_epoch: 50
+checkpoint_every_n_epochs: 50
 
 model:
   out_dim: 256
