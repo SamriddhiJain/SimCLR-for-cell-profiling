@@ -7,6 +7,7 @@ from feature_eval.random_forest_classifier import RFClassifier
 import os
 import shutil
 import sys
+from tqdm import tqdm
 
 apex_support = False
 try:
@@ -85,8 +86,8 @@ class SimCLR(object):
         valid_n_iter = 0
         best_valid_loss = np.inf
 
-        for epoch_counter in range(self.config['epochs']):
-            for ((xis, xjs), _) in train_loader:
+        for epoch_counter in tqdm(range(self.config['epochs'])):
+            for ((xis, xjs), _) in tqdm(train_loader):
                 optimizer.zero_grad()
 
                 xis = xis.to(self.device)
@@ -128,6 +129,11 @@ class SimCLR(object):
             if epoch_counter >= 10:
                 scheduler.step()
             #self.writer.add_scalar('cosine_lr_decay', scheduler.get_lr()[0], global_step=n_iter)
+            # save checkpoints
+            if ("checkpoint_every_n_epochs" in self.config.keys() and
+                    epoch_counter % self.config['checkpoint_every_n_epochs'] == 0):
+                torch.save(model.state_dict(), os.path.join(model_checkpoints_folder, f'model_epoch_{epoch_counter}.pth'))
+
             torch.save(model.state_dict(), os.path.join(model_checkpoints_folder, 'model_latest.pth'))
             print(f"epoch {epoch_counter} end")
 

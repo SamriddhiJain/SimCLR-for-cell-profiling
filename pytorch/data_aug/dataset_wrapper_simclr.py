@@ -11,14 +11,14 @@ np.random.seed(0)
 
 class DataSetWrapperSimCLR(DataSetWrapper):
 
-    def __init__(self, batch_size, path, root_dir, num_workers, valid_size, input_shape, s):
-        super().__init__(batch_size, path, root_dir, num_workers, valid_size, input_shape)
+    def __init__(self, batch_size, path, root_dir, num_workers, valid_size, input_shape, s, sampler, preload):
+        super().__init__(batch_size, path, root_dir, num_workers, valid_size, input_shape, sampler, preload)
         self.s = s
 
     def get_data_loaders(self):
         data_augment = self._get_simclr_pipeline_transform()
 
-        train_dataset = CellDataset(self.path, self.root_dir, self.input_shape,
+        train_dataset = CellDataset(self.path, self.root_dir, self.input_shape, self.preload, self.num_workers,
                                     transform=SimCLRDataTransform(data_augment))
 
         train_loader, valid_loader = self.get_train_validation_data_loaders(train_dataset)
