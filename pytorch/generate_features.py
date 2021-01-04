@@ -13,8 +13,8 @@ from tqdm import tqdm
 def get_data(config):
     data_transforms = transforms.Compose([transforms.ToTensor(),
                                           transforms.Normalize((0.7469, 0.7403, 0.7307), (0.1548, 0.1594, 0.1706))])
-    dataset = CellDataset(config['dataset']['path'],
-                          config['dataset']['root_dir'],
+    dataset = CellDataset(config['eval_dataset']['path'],
+                          config['eval_dataset']['root_dir'],
                           eval(config['dataset']['input_shape']),
                           config['dataset']['preload'],
                           num_workers=1,
@@ -57,6 +57,18 @@ def main():
     X, Y = convert_tensor_to_np(model, loader)
 
     np.save(f"runs/{run_directory}/features.npy", X)
+
+
+def get_embeddings(config, model_path, loader):
+    model = ResNetSimCLR(config["model"]["base_model"], config["model"]["out_dim"]).to("cuda")
+    # update model path
+    run_directory = "Dec28_19-51-34_c520871eabf7"
+    state_dict = torch.load(model_path)
+    model.load_state_dict(state_dict)
+
+    X, Y = convert_tensor_to_np(model, loader)
+
+    return X
 
 
 if __name__ == "__main__":
