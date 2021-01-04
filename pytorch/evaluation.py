@@ -14,7 +14,7 @@ def get_meta(sc_meta_path):
     meta_sc['Metadata_Well'] = [s.split("-")[1] for s in meta_sc['Image_Name']]
     meta_sc['Metadata_Site'] = [s.split("-")[2][:2] for s in meta_sc['Image_Name']]
     meta_sc['compound'] = [s.split("_")[0] for s in meta_sc['Class_Name']]
-    meta_sc['concentration'] = [s.split("_")[1] for s in meta_sc['Class_Name']]
+    meta_sc['concentration'] = [float(s.split("_")[1]) for s in meta_sc['Class_Name']]
     meta_sc['Replicate'] = 1
 
     moa = pd.read_csv("https://data.broadinstitute.org/bbbc/BBBC021/BBBC021_v1_moa.csv")

@@ -62,7 +62,6 @@ def main():
 def get_embeddings(config, model_path, loader):
     model = ResNetSimCLR(config["model"]["base_model"], config["model"]["out_dim"]).to("cuda")
     # update model path
-    run_directory = "Dec28_19-51-34_c520871eabf7"
     state_dict = torch.load(model_path)
     model.load_state_dict(state_dict)
 

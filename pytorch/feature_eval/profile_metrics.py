@@ -151,29 +151,29 @@ def calculate_nsc_and_nscb(features, meta, plot_file_structure, DO_WHITENING = F
         treatments.loc[i, "Batch"] = ",".join(result["Batch"].unique())
 
     # MOA CLASSIFICATION
-    def nsc(treatments):
-        treatments["nsc"] = 0
+    def nsc(treatments_df):
+        treatments_df["nsc"] = 0
         correct, total = 0, 0
-        for i in treatments.index:
+        for i in treatments_df.index:
             # Leave one compound out
-            training_data = treatments[treatments["Compound"] != treatments.loc[i, "Compound"]]
-            test_data = np.asarray(treatments.loc[i, feature_ids]).reshape(1, -1)
+            training_data = treatments_df[treatments_df["Compound"] != treatments_df.loc[i, "Compound"]]
+            test_data = np.asarray(treatments_df.loc[i, feature_ids]).reshape(1, -1)
             prediction = knn(training_data[feature_ids], training_data["MOA_class"], test_data)
             # Check prediction
-            if treatments.loc[i, "MOA_class"] == prediction:
+            if treatments_df.loc[i, "MOA_class"] == prediction:
                 correct += 1
-                treatments.loc[i, "nsc"] = 1
+                treatments_df.loc[i, "nsc"] = 1
             else:
-                print(len(training_data), treatments.loc[i, "Compound"], treatments.loc[i, "Concentration"],
-                      treatments.loc[i, "MOA"], moas[prediction])
+                print(len(training_data), treatments_df.loc[i, "Compound"], treatments_df.loc[i, "Concentration"],
+                      treatments_df.loc[i, "MOA"], moas[prediction])
             total += 1
         print("NSC Accuracy: {} correct out of {} = {}".format(correct, total, correct / total))
-        return correct / total
+        return treatments_df.copy() ,correct / total
 
-    def nscb(treatments):
-        treatments["nscb"] = 1
+    def nscb(treatments_df):
+        treatments_df["nscb"] = 1
         # Cholesterol-lowering and Kinase inhibitors are only in one batch
-        valid_treatments = treatments[~treatments["MOA"].isin(["Cholesterol-lowering", "Kinase inhibitors"])]
+        valid_treatments = treatments_df[~treatments_df["MOA"].isin(["Cholesterol-lowering", "Kinase inhibitors"])]
 
         correct, total = 0, 0
         for i in valid_treatments.index:
@@ -192,20 +192,20 @@ def calculate_nsc_and_nscb(features, meta, plot_file_structure, DO_WHITENING = F
                       valid_treatments.loc[i, "Concentration"],
                       valid_treatments.loc[i, "MOA"],
                       moas[prediction])
-                treatments.loc[i, "nscb"] = 0
+                treatments_df.loc[i, "nscb"] = 0
             total += 1
         print("NSCB Accuracy: {} correct out of {} = {}".format(correct, total, correct / total))
-        return correct / total
+        return treatments_df.copy(), correct / total
 
     ## TREATMENT LEVEL - NOT SAME COMPOUND MATCHING
     print(" >> TREATMENT LEVEL")
-    calculated_nsc = nsc(treatments)
+    treatments, calculated_nsc = nsc(treatments)
     # print(" >> WELL LEVEL")
     # nsc(wells)
 
     ## TREATMENT LEVEL - NOT SAME COMPOUND, NOT SAME BATCH
     print(" >> TREATMENT LEVEL")
-    calculated_nscb = nscb(treatments)
+    treatments, calculated_nscb = nscb(treatments)
 
     # VISUALIZATION OF PROFILES
     treated_wells = wells[~wells["Compound"].isin(["DMSO"])]  # , "taxol"])]
