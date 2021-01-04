@@ -30,7 +30,7 @@ class DataSetWrapperSimCLR(DataSetWrapper):
         data_transforms = transforms.Compose([transforms.RandomResizedCrop(size=self.input_shape[0]),
                                               transforms.RandomHorizontalFlip(),
                                               transforms.RandomApply([color_jitter], p=0.8),
-                                              transforms.RandomGrayscale(p=0.2),
+                                              # transforms.RandomGrayscale(p=0.2),
                                               GaussianBlur(kernel_size=int(0.1 * self.input_shape[0])),
                                               transforms.ToTensor(),
                                               transforms.Normalize((0.7469, 0.7403, 0.7307), (0.1548, 0.1594, 0.1706))])

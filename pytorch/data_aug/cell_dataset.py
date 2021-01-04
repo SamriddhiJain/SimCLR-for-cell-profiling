@@ -33,13 +33,13 @@ class CellDataset(Dataset):
         print(f"Total images: {len(self.train_images)}")
         if self.preload:
             print("Loading images ...")
-            self.images = Parallel(n_jobs=self.num_workers, verbose=55)(
-                delayed(self.load_image)(self.root_dir+im_name) for im_name in self.train_images
-            )
-            # self.images = []
-            # for im_name in tqdm(self.train_images):
-            #     sample = self.load_image(self.root_dir+im_name)
-            #     self.images.append(sample)
+            # self.images = Parallel(n_jobs=self.num_workers, verbose=55)(
+            #     delayed(self.load_image)(self.root_dir+im_name) for im_name in self.train_images
+            # )
+            self.images = []
+            for im_name in tqdm(self.train_images):
+                sample = self.load_image(self.root_dir+im_name)
+                self.images.append(sample)
 
     def __len__(self):
         return len(self.train_images)
