@@ -1,5 +1,8 @@
 import yaml
 import pandas as pd
+import numpy as np
+import os
+import time
 
 from feature_eval.profile_metrics import calculate_nsc_and_nscb
 from generate_features import get_embeddings, get_data
@@ -22,8 +25,20 @@ def get_meta(sc_meta_path):
 
     return meta_sc
 
+def all_checkpoints_exist(checkpoint_list):
+    for checkpoint in checkpoint_list:
+        if not os.path.isfile(checkpoint):
+            return False
+    return True
+
 
 def nsc_nscb(epoch_list_dic):
+    # Pre check for checkpoints
+    for model_dir, epoch_list in epoch_list_dic.items():
+        checkpoints_dir = f"runs/{model_dir}/checkpoints/"
+        status = all_checkpoints_exist([f"{checkpoints_dir}/model_epoch_{e}.pth" for e in epoch_list])
+        print(f"Checking directory {checkpoints_dir} for epochs {epoch_list} to all exist: {status}")
+
     config = yaml.load(open("config.yaml", "r"))
     loader = get_data(config)
     meta = get_meta(config['eval_dataset']['path'])
@@ -32,10 +47,15 @@ def nsc_nscb(epoch_list_dic):
         checkpoints_dir = f"runs/{model_dir}/checkpoints/"
         print("Evaluating", checkpoints_dir)
 
+        print("Waiting for all checkpoints to be in checkpoint directory ...")
+        while not all_checkpoints_exist([f"{checkpoints_dir}/model_epoch_{e}.pth" for e in epoch_list]):
+            time.sleep(60)
+
         for epoch in epoch_list:
-            model_path = f"{checkpoints_dir}/checkpoints/model_epoch_{epoch}.pth"
-            plot_file_structure = f"{checkpoints_dir}/checkpoints/" + "{}_epoch_" + f"{epoch}.jpg"
+            model_path = f"{checkpoints_dir}/model_epoch_{epoch}.pth"
+            plot_file_structure = f"{checkpoints_dir}/" + "{}_epoch_" + f"{epoch}.jpg"
             features = get_embeddings(config, model_path, loader)
+            np.save(f"runs/{model_dir}/features_epoch_{epoch}.npy", features)
 
             # without TVN transformation
             nsc, nscb = calculate_nsc_and_nscb(features=features,

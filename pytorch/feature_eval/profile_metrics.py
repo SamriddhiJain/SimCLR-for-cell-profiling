@@ -13,6 +13,27 @@ import matplotlib.pyplot as plt
 import seaborn as sb
 
 
+def whitening_transform(X, lambda_, rotate=True):
+    C = (1 / X.shape[0]) * np.dot(X.T, X)
+    s, V = scipy.linalg.eigh(C)
+    D = np.diag(1. / np.sqrt(s + lambda_))
+    W = np.dot(V, D)
+    if rotate:
+        W = np.dot(W, V.T)
+    return W
+
+
+def whiten(X, mu, W):
+    return np.dot(X - mu, W)
+
+
+def knn(X, Y, T):
+    neigh = KNeighborsClassifier(n_neighbors=1, algorithm="brute", metric="cosine")
+    neigh.fit(X, Y)
+    prediction = neigh.predict(T)
+    return prediction[0]
+
+
 def calculate_nsc_and_nscb(features, meta, plot_file_structure, DO_WHITENING = False, DO_CORAL = False, REG_PARAM = 1.0):
     # READ METADATA OF IMAGES (LEVEL 1)
     num_features = features.shape[1]
@@ -55,18 +76,6 @@ def calculate_nsc_and_nscb(features, meta, plot_file_structure, DO_WHITENING = F
     sites = pd.concat([sites1, sites2], axis=1)
 
     # TYPICAL VARIATION NORMALIZATION
-    def whitening_transform(X, lambda_, rotate=True):
-        C = (1 / X.shape[0]) * np.dot(X.T, X)
-        s, V = scipy.linalg.eigh(C)
-        D = np.diag(1. / np.sqrt(s + lambda_))
-        W = np.dot(V, D)
-        if rotate:
-            W = np.dot(W, V.T)
-        return W
-
-    def whiten(X, mu, W):
-        return np.dot(X - mu, W)
-
     feature_ids = [i for i in range(num_features)]
 
     if DO_WHITENING:
@@ -142,13 +151,6 @@ def calculate_nsc_and_nscb(features, meta, plot_file_structure, DO_WHITENING = F
         treatments.loc[i, "Batch"] = ",".join(result["Batch"].unique())
 
     # MOA CLASSIFICATION
-    ## TREATMENT LEVEL - NOT SAME COMPOUND MATCHING
-    def knn(X, Y, T):
-        neigh = KNeighborsClassifier(n_neighbors=1, algorithm="brute", metric="cosine")
-        neigh.fit(X, Y)
-        prediction = neigh.predict(T)
-        return prediction[0]
-
     def nsc(treatments):
         treatments["nsc"] = 0
         correct, total = 0, 0
@@ -168,12 +170,6 @@ def calculate_nsc_and_nscb(features, meta, plot_file_structure, DO_WHITENING = F
         print("NSC Accuracy: {} correct out of {} = {}".format(correct, total, correct / total))
         return correct / total
 
-    print(" >> TREATMENT LEVEL")
-    calculated_nsc = nsc(treatments)
-    # print(" >> WELL LEVEL")
-    # nsc(wells)
-
-    ## TREATMENT LEVEL - NOT SAME COMPOUND, NOT SAME BATCH
     def nscb(treatments):
         treatments["nscb"] = 1
         # Cholesterol-lowering and Kinase inhibitors are only in one batch
@@ -201,6 +197,13 @@ def calculate_nsc_and_nscb(features, meta, plot_file_structure, DO_WHITENING = F
         print("NSCB Accuracy: {} correct out of {} = {}".format(correct, total, correct / total))
         return correct / total
 
+    ## TREATMENT LEVEL - NOT SAME COMPOUND MATCHING
+    print(" >> TREATMENT LEVEL")
+    calculated_nsc = nsc(treatments)
+    # print(" >> WELL LEVEL")
+    # nsc(wells)
+
+    ## TREATMENT LEVEL - NOT SAME COMPOUND, NOT SAME BATCH
     print(" >> TREATMENT LEVEL")
     calculated_nscb = nscb(treatments)
 
