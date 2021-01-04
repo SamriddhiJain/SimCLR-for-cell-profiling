@@ -2,7 +2,9 @@
 This repo hosts the code for all the experiments done as part of the group project "SimCLR for cell-profiling" in the course Deep Learning offered at ETH Zurich Autumn Semester 2020.
 
 ## Project overview
+
 ![](fig/fig2.jpeg)
+
 In this project we are attempting to improve single-cell representations by applying the SimCLR framework to multi-channel images of our “field-of-views”. A field-of-view is the underlying physical sample (composed of cells) of an image. The different channels represent fluorescence bound DNA, Tubulin and Actin. The original images are cropped to provide single-cell images by using cell locations as described in Ljosa et al. [2]. SimCLR is applied to single-cell images to extract appropriate single-cell representations. The representations of cells in a same field-of-view are aggregated by taking their mean morphological profile. The quality of mean profiles (i.e. mean representations) is evaluated based on NSC and NSCB metrics. Exploration and visualization of mean profiles is also part of our project.
 
 ## Datasets
@@ -19,7 +21,7 @@ $ python run.py
 ```
 
 ### Repository Structure
-- The `data_aug` module holds the code for reading the single cell dataset, loading it as dataloaders and applying various augmentations.
+- The `data_aug` module holds the code for reading the single cell image dataset, loading it as dataloaders and applying various augmentations.
 - `loss` module holds the implementation of NTXent loss and LARS optimizer.
 - The module `models` holds implementation of base networks (4 layer CNN) and resnet models.
 - `feature_eval` holds the classfier code that can be used on top of the representations to test progress. Currently we are using a random forest classifier, but a simple linear head can also be used.
