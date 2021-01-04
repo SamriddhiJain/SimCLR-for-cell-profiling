@@ -25,10 +25,17 @@ def get_meta(sc_meta_path):
 
     return meta_sc
 
+
 def all_checkpoints_exist(checkpoint_list):
     for checkpoint in checkpoint_list:
         if not os.path.isfile(checkpoint):
             return False
+    return True
+
+
+def checkpoint_exists(checkpoint):
+    if not os.path.isfile(checkpoint):
+        return False
     return True
 
 
@@ -46,14 +53,14 @@ def nsc_nscb(epoch_list_dic):
     for model_dir, epoch_list in epoch_list_dic.items():
         checkpoints_dir = f"runs/{model_dir}/checkpoints/"
         print("Evaluating", checkpoints_dir)
-
-        print("Waiting for all checkpoints to be in checkpoint directory ...")
-        while not all_checkpoints_exist([f"{checkpoints_dir}/model_epoch_{e}.pth" for e in epoch_list]):
-            time.sleep(60)
-
         for epoch in epoch_list:
             model_path = f"{checkpoints_dir}/model_epoch_{epoch}.pth"
             plot_file_structure = f"{checkpoints_dir}/" + "{}_epoch_" + f"{epoch}.jpg"
+
+            print(f"Waiting for the epoch {epoch} checkpoint to become available in {checkpoints_dir} ...")
+            while not checkpoint_exists(model_path):
+                time.sleep(60)
+
             features = get_embeddings(config, model_path, loader)
             np.save(f"runs/{model_dir}/features_epoch_{epoch}.npy", features)
 
