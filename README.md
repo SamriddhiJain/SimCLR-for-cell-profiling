@@ -3,7 +3,7 @@ This repo hosts the code for all the experiments done as part of the group proje
 
 ## Project overview
 
-![](fig/fig2.jpeg)
+![](fig/fig.png)
 
 In this project we are attempting to improve single-cell representations by applying the SimCLR framework to multi-channel images of our “field-of-views”. A field-of-view is the underlying physical sample (composed of cells) of an image. The different channels represent fluorescence bound DNA, Tubulin and Actin. The original images are cropped to provide single-cell images by using cell locations as described in Ljosa et al. [2]. SimCLR is applied to single-cell images to extract appropriate single-cell representations. The representations of cells in a same field-of-view are aggregated by taking their mean morphological profile. The quality of mean profiles (i.e. mean representations) is evaluated based on NSC and NSCB metrics. Exploration and visualization of mean profiles is also part of our project.
 
@@ -21,7 +21,7 @@ $ conda activate simclr
 The SimCLR training code is based on pytorch and is located in the directory `src`. All the experiments can be tuned using `config.yaml`. Follow these steps to run any desired experiments,
 - Update the entries in `config.yaml` file as per the experiment. The parameters are discussed in more details in the following sections.
 - Use `python run.py` to train the SimCLR framework, the trained models will be stored in `runs` directory.
-- To evaluate NSC-NSCB scores, update the model path and epoch ids in `evaluation.py`. This also needs the config file in which one can specify the test dataset paths. The script will generate NSC-NSCB scores with and without TVN and the related tSNE visualizations. This script also saves the image representations in specified folder.  
+- To evaluate NSC-NSCB scores, update the model path and epoch ids in `evaluation.py`. This also needs the config file in which one can specify the test dataset paths. The script will generate NSC-NSCB scores with and without TVN and the related tSNE visualizations. This script also saves the image representations in specified folder. If you just need to generate single cell embeddings, you can directly use `generate_features.py` with the config file.
 ```
 $ cd src
 $ python run.py         # Training SimCLR
@@ -36,7 +36,7 @@ $ python evaluation.py  # NSC-NSCB evaluations
 - `feature_eval\random_forest_classifier.py` holds the classfier code that can be used on top of the representations to test progress. Currently we are using a random forest classifier, but a simple linear head can also be used.
 - Finally, `simclr.py` binds all these modules together and holds the code for overall training.
 - The trained model checkpoints are stored in directory `{working_directory}\runs`.
-- The code for downstream task (single cell representation aggregation and KNN training) is present in module `feature_eval\profile_metrics.py`. It also contains tsne visualization code ran on the aggregated data.
+- The code for running downstream task (single cell representation aggregation and KNN training) is present in `evaluation.py`. This script is a wrapper over `generate_features.py` and `feature_eval\profile_measures.py` which generate single cell embeddings and run nsc evaluation pipeline respectively. Both of the scripts can also be used as stand alone modules for intermediate results. `profile_measures.py` also contains tsne visualization code ran on the aggregated data.
 
 ### Config hyperparameters
 The config file and various hyperparameters are explained details below.
@@ -97,7 +97,8 @@ dataset:
   # Size of the validation set in percentage
   valid_size: 0.05
 
-  # data sampler: weighted or random, weighted should be used if training with DMSO images
+  # data sampler: weighted or random,
+  # weighted sampler guaranties to create balanced batches and can be used for training with full DMSO datasets
   sampler: "random"
 
   # whether to preload the images before training or on the fly
@@ -105,6 +106,7 @@ dataset:
 
 # dataset for training the classfier
 # all the parameters within this field are same as the dataset field
+# this field will also be used for generating embeddings in generate_features.py
 eval_dataset:
   path: '../single-cell-sample-train/sc-metadata.csv'
   root_dir: '../single-cell-sample-train/'
