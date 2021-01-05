@@ -17,17 +17,19 @@ The code is based on pytorch. All the experiments can be tuned using `config.yam
 ```
 $ conda env create --name simclr --file env.yml
 $ conda activate simclr
+$ cd src
 $ python run.py
 ```
 
 ### Repository Structure
+- All the SimCLR training and evaluation code is in the directory `src`. The `archive` folder has some preliminary code which we started with but not used for final evaluations. The next points explain the implementation of SimCLR modules within the `src` folder.
 - The `data_aug` module holds the code for reading the single cell image dataset, loading it as dataloaders and applying various augmentations.
 - `loss` module holds the implementation of NTXent loss and LARS optimizer.
 - The module `models` holds implementation of base networks (4 layer CNN) and resnet models.
-- `feature_eval` holds the classfier code that can be used on top of the representations to test progress. Currently we are using a random forest classifier, but a simple linear head can also be used.
+- `feature_eval\random_forest_classifier.py` holds the classfier code that can be used on top of the representations to test progress. Currently we are using a random forest classifier, but a simple linear head can also be used.
 - Finally, `simclr.py` binds all these modules together and holds the code for overall training.
 - The trained model checkpoints are stored in directory `{working_directory}\runs`.
-- The code for downstream task (single cell representation aggregation and KNN training) is present in module `ADD`. It also contains tsne visualization code ran on the aggregated data.
+- The code for downstream task (single cell representation aggregation and KNN training) is present in module `feature_eval\profile_metrics.py`. It also contains tsne visualization code ran on the aggregated data.
 
 ### Config hyperparameters
 The config file and various hyperparameters are explained details below.
