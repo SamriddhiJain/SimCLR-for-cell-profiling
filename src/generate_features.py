@@ -26,7 +26,6 @@ def get_data(config):
         shuffle=False)
     return loader
 
-
 def convert_tensor_to_np(model, data_loader):
     train_feature_vector = []
     train_labels_vector = []
@@ -68,7 +67,6 @@ def get_embeddings(config, model_path, loader):
     X, Y = convert_tensor_to_np(model, loader)
 
     return X
-
 
 if __name__ == "__main__":
     main()

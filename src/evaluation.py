@@ -7,7 +7,7 @@ import time
 from feature_eval.profile_metrics import calculate_nsc_and_nscb
 from generate_features import get_embeddings, get_data
 
-
+# create moa meta data file
 def get_meta(sc_meta_path):
     meta_sc = pd.read_csv(sc_meta_path)
     meta_sc['Metadata_Plate'] = [s.split("-")[0] for s in meta_sc['Image_Name']]

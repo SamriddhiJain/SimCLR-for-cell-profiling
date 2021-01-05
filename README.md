@@ -10,15 +10,22 @@ In this project we are attempting to improve single-cell representations by appl
 ## Datasets
 The methods are evaluated on BBBC021 (Caie et al. [1]). This dataset consists of images captured from MCF-7 breast cancer cell populations exposed to a group of chemical compounds for a fixed amount of time. A subset of BBBC021 has previously been investigated and annotated for MOAs by Ljosa et al. [2]. Our project uses this particular subset that provides an MOA label as well as a set of single-cell locations for each field-of-view.
 
-## Running experiments
-The code is based on pytorch. All the experiments can be tuned using `config.yaml` and can be run by simply using `python run.py`.
-
+## Code & experiments
 ### Installation
 ```
 $ conda env create --name simclr --file env.yml
 $ conda activate simclr
+```
+
+### Running Experiments
+The SimCLR training code is based on pytorch and is located in the directory `src`. All the experiments can be tuned using `config.yaml`. Follow these steps to run any desired experiments,
+- Update the entries in `config.yaml` file as per the experiment. The parameters are discussed in more details in the following sections.
+- Use `python run.py` to train the SimCLR framework, the trained models will be stored in `runs` directory.
+- To evaluate NSC-NSCB scores, update the model path and epoch ids in `evaluation.py`. This also needs the config file in which one can specify the test dataset paths. The script will generate NSC-NSCB scores with and without TVN and the related tSNE visualizations. This script also saves the image representations in specified folder.  
+```
 $ cd src
-$ python run.py
+$ python run.py         # Training SimCLR
+$ python evaluation.py  # NSC-NSCB evaluations
 ```
 
 ### Repository Structure
