@@ -21,7 +21,7 @@ def get_data(config):
                           transform=data_transforms)
     loader = DataLoader(
         dataset,
-        batch_size=512,
+        batch_size=config['batch_size'],
         num_workers=1,
         shuffle=False)
     return loader

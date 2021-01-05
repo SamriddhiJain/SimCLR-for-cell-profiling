@@ -55,7 +55,6 @@ def nsc_nscb(epoch_list_dic):
         print("Evaluating", checkpoints_dir)
         for epoch in epoch_list:
             model_path = f"{checkpoints_dir}/model_epoch_{epoch}.pth"
-            plot_file_structure = f"{checkpoints_dir}/" + "{}_epoch_" + f"{epoch}.jpg"
 
             print(f"Waiting for the epoch {epoch} checkpoint to become available in {checkpoints_dir} ...")
             while not checkpoint_exists(model_path):
@@ -65,6 +64,7 @@ def nsc_nscb(epoch_list_dic):
             np.save(f"runs/{model_dir}/features_epoch_{epoch}.npy", features)
 
             # without TVN transformation
+            plot_file_structure = f"{checkpoints_dir}/" + "{}_epoch_" + f"{epoch}_untransformed.jpg"
             nsc, nscb = calculate_nsc_and_nscb(features=features,
                                                meta=meta,
                                                plot_file_structure=plot_file_structure,
@@ -74,7 +74,17 @@ def nsc_nscb(epoch_list_dic):
             print(f"Results for {model_dir} epoch {epoch};")
             print(f"NSC:{nsc} NSCB:{nscb}")
 
+            # with whitening transformation
+            plot_file_structure = f"{checkpoints_dir}/" + "{}_epoch_" + f"{epoch}_whitened.jpg"
+            nsc, nscb = calculate_nsc_and_nscb(features=features,
+                                               meta=meta,
+                                               plot_file_structure=plot_file_structure,
+                                               DO_WHITENING=True,
+                                               DO_CORAL=False)
+            print(f"whitening-NSC:{nsc} whitening-NSCB:{nscb}")
+
             # with TVN transformation
+            plot_file_structure = f"{checkpoints_dir}/" + "{}_epoch_" + f"{epoch}_TVN.jpg"
             nsc, nscb = calculate_nsc_and_nscb(features=features,
                                                meta=meta,
                                                plot_file_structure=plot_file_structure,
@@ -84,6 +94,7 @@ def nsc_nscb(epoch_list_dic):
 
 
 if __name__ == "__main__":
-    epoch_list_dic = {"Jan03_14-55-43_lo-g2-013": [50, 100, 150, 200, 250]}
+    epoch_list_dic = {"Jan03_14-55-43_lo-g2-013": [50, 100, 150, 200, 250],
+                      "Jan04_14-32-13_lo-g2-009": [50, 100, 150, 200, 250]}
 
     nsc_nscb(epoch_list_dic)
