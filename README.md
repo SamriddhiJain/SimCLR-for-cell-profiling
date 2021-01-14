@@ -25,7 +25,7 @@ The SimCLR training code is based on pytorch and is located in the directory `sr
 - *Example Evaluation:* 
   - We provide a small set of [validation data](https://polybox.ethz.ch/index.php/s/xq7uhAwkZAu2UQR) to run a quick evaluation. Download the data and update the path in `eval_dataset` section in `config.yaml`. 
   - Place the model checkpoints for creating representations in `runs\{model_name}\checkpoints\` directory, they are expected to be in format `model_epouch_{epoch_number}.pth`. Update the `{model_name}` and `{epoch_number}`(s) in the file `evaluation.py`. 
-  - We also provide [pre-trained weights]() for our best model to reproduce the results.
+  - We also provide [pre-trained weights](https://polybox.ethz.ch/index.php/s/y2EJknOtLL6B8EF) for our best model to reproduce the results.
 
 ```
 $ cd src
