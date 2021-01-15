@@ -22,7 +22,7 @@ The SimCLR training code is based on pytorch and is located in the directory `sr
 - Update the entries in `config.yaml` file as per the experiment. The parameters are discussed in more details in the following sections.
 - Use `python run.py` to train the SimCLR framework, the trained models will be stored in `runs` directory.
 - To evaluate NSC-NSCB scores, update the model path and epoch ids in `evaluation.py`. This also needs the config file in which one can specify the test dataset paths. The script will generate NSC-NSCB scores with and without TVN and the related tSNE visualizations. This script also saves the image representations in specified folder. If you just need to generate single cell embeddings, you can directly use `generate_features.py` with the config file.
-- *Example Evaluation:* 
+- **Example Evaluation:** 
   - We provide a small set of [validation data](https://polybox.ethz.ch/index.php/s/xq7uhAwkZAu2UQR) to run a quick evaluation. Download the data and update the path in `eval_dataset` section in `config.yaml`. 
   - Place the model checkpoints for creating representations in `runs\{model_name}\checkpoints\` directory, they are expected to be in format `model_epouch_{epoch_number}.pth`. Update the `{model_name}` and `{epoch_number}`(s) in the file `evaluation.py`. 
   - We also provide [pre-trained weights](https://polybox.ethz.ch/index.php/s/y2EJknOtLL6B8EF) for our best model to reproduce the results.
