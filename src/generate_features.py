@@ -48,21 +48,21 @@ def main():
 
     model = ResNetSimCLR(config["model"]["base_model"], config["model"]["out_dim"]).to("cuda")
     # update model path
-    run_directory = "Dec28_19-51-34_c520871eabf7"
-    state_dict = torch.load(f"runs/{run_directory}/checkpoints/model_latest.pth")
-    model.load_state_dict(state_dict)
+    model_directory = "Dec28_19-51-34_c520871eabf7"
+    checkpoint = torch.load(f"{config['run_dir']}/{model_directory}/checkpoints/model_latest.pth")
+    model.load_state_dict(checkpoint["state_dict"])
 
     loader = get_data(config)
     X, Y = convert_tensor_to_np(model, loader)
 
-    np.save(f"runs/{run_directory}/features.npy", X)
+    np.save(f"{config['run_dir']}/{model_directory}/features.npy", X)
 
 
 def get_embeddings(config, model_path, loader):
     model = ResNetSimCLR(config["model"]["base_model"], config["model"]["out_dim"]).to("cuda")
     # update model path
-    state_dict = torch.load(model_path)
-    model.load_state_dict(state_dict)
+    checkpoint = torch.load(model_path)
+    model.load_state_dict(checkpoint["state_dict"])
 
     X, Y = convert_tensor_to_np(model, loader)
 

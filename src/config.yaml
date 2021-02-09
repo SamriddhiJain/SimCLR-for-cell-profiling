@@ -1,7 +1,8 @@
+run_dir: "/scratch_net/neo/shared_data/runs"
 batch_size: 256
 epochs: 300
 eval_every_n_epochs: 1
-fine_tune_from: None
+continue_training_from: None
 log_every_n_steps: 50
 weight_decay: 10e-6
 fp16_precision: False
@@ -13,8 +14,8 @@ model:
   base_model: "resnet50"
 
 dataset:
-  path: '../single-cell-sample-train/sc-metadata.csv'
-  root_dir: '../single-cell-sample-train/'
+  path: '/scratch_net/neo/shared_data/datasets/single-cell-sample-train/sc-metadata.csv'
+  root_dir: '/scratch_net/neo/shared_data/datasets/single-cell-sample-train/'
   s: 1
   input_shape: (96,96,3)
   num_workers: 4
@@ -23,11 +24,11 @@ dataset:
   preload: True
 
 eval_dataset:
-  path: '../single-cell-sample-train/sc-metadata.csv'
-  root_dir: '../single-cell-sample-train/'
+  path: '/scratch_net/neo/shared_data/datasets/single-cell-sample-validation-full-dmso/sc-metadata.csv'
+  root_dir: '/scratch_net/neo/shared_data/datasets/single-cell-sample-validation-full-dmso/'
   input_shape: (96,96,3)
   num_workers: 0
-  valid_size: 0.3
+  valid_size: 0.001
   sampler: "random"
   preload: True
 
