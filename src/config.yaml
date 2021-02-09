@@ -1,3 +1,4 @@
+run_dir: "/scratch_net/neo/shared_data/runs"
 batch_size: 256
 epochs: 300
 eval_every_n_epochs: 1

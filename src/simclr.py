@@ -4,10 +4,12 @@ from torch.utils.tensorboard import SummaryWriter
 import torch.nn.functional as F
 from loss.nt_xent import NTXentLoss
 from feature_eval.random_forest_classifier import RFClassifier
+
 import os
 import shutil
 import sys
 from tqdm import tqdm
+from datetime import datetime
 
 apex_support = False
 try:
@@ -29,7 +31,8 @@ class SimCLR(object):
     def __init__(self, dataset, config, eval_dataset=None):
         self.config = config
         self.device = self._get_device()
-        self.writer = SummaryWriter()
+        self.writer = SummaryWriter(log_dir=os.path.join(self.config["run_dir"],
+                                                         datetime.now().strftime("%Y%m%d-%H%M%S")))
         self.dataset = dataset
         self.eval_dataset = eval_dataset
         self.nt_xent_criterion = NTXentLoss(self.device, config['batch_size'], **config['loss'])
@@ -73,7 +76,7 @@ class SimCLR(object):
 
         start_epoch = 0
 
-        # load complete previous step to continue a training
+        # load full previous states to continue a training
         if self.config["continue_training_from"] is not None:
             model, optimizer, scheduler, start_epoch = self._load_previous_state(model, optimizer)
 
@@ -176,14 +179,16 @@ class SimCLR(object):
 
     def _load_previous_state(self, model, optimizer):
         try:
-            checkpoints_folder = os.path.join('./runs', self.config['continue_training_from'], 'checkpoints')
+            checkpoints_folder = os.path.join(self.config['run_dir'],
+                                              self.config['continue_training_from'],
+                                              "checkpoints")
             checkpoint = torch.load(os.path.join(checkpoints_folder, 'model_latest.pth'))
 
             model.load_state_dict(checkpoint['state_dict'])
             optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
             scheduler = checkpoint['scheduler']
             epoch = checkpoint['epoch']
-            print("Loaded from checkpoint with success.")
+            print("Loaded from checkpoint successfully.")
         except FileNotFoundError:
             Exception("Previous state checkpoint not found.")
 
