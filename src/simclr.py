@@ -24,12 +24,6 @@ import numpy as np
 torch.manual_seed(0)
 
 
-def _save_config_file(model_checkpoints_folder):
-    if not os.path.exists(model_checkpoints_folder):
-        os.makedirs(model_checkpoints_folder)
-        shutil.copy('./config.yaml', os.path.join(model_checkpoints_folder, 'config.yaml'))
-
-
 class SimCLR(object):
 
     def __init__(self, dataset, config, eval_dataset=None):
@@ -39,6 +33,7 @@ class SimCLR(object):
         self.dataset = dataset
         self.eval_dataset = eval_dataset
         self.nt_xent_criterion = NTXentLoss(self.device, config['batch_size'], **config['loss'])
+        self.model_checkpoints_folder = os.path.join(self.writer.log_dir, 'checkpoints')
 
     def _get_device(self):
         device = 'cuda' if torch.cuda.is_available() else 'cpu'
@@ -60,33 +55,41 @@ class SimCLR(object):
         loss = self.nt_xent_criterion(zis, zjs)
         return loss
 
+    def _save_config_file(self):
+        if not os.path.exists(self.model_checkpoints_folder):
+            os.makedirs(self.model_checkpoints_folder)
+            shutil.copy('./config.yaml', os.path.join(self.model_checkpoints_folder, 'config.yaml'))
+
     def train(self):
 
         train_loader, valid_loader = self.dataset.get_data_loaders()
 
         model = ResNetSimCLR(**self.config["model"]).to(self.device)
-        model = self._load_pre_trained_weights(model)
 
         optimizer = torch.optim.Adam(model.parameters(), 3e-4, weight_decay=eval(self.config['weight_decay']))
 
         scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=len(train_loader), eta_min=0,
                                                                last_epoch=-1)
 
+        start_epoch = 0
+
+        # load complete previous step to continue a training
+        if self.config["continue_training_from"] is not None:
+            model, optimizer, scheduler, start_epoch = self._load_previous_state(model, optimizer)
+
         if apex_support and self.config['fp16_precision']:
             model, optimizer = amp.initialize(model, optimizer,
                                               opt_level='O2',
                                               keep_batchnorm_fp32=True)
 
-        model_checkpoints_folder = os.path.join(self.writer.log_dir, 'checkpoints')
-
         # save config file
-        _save_config_file(model_checkpoints_folder)
+        self._save_config_file()
 
         n_iter = 0
         valid_n_iter = 0
         best_valid_loss = np.inf
 
-        for epoch_counter in tqdm(range(self.config['epochs'])):
+        for epoch_counter in tqdm(range(start_epoch, self.config['epochs'])):
             for ((xis, xjs), _) in tqdm(train_loader):
                 optimizer.zero_grad()
 
@@ -114,7 +117,7 @@ class SimCLR(object):
                 if valid_loss < best_valid_loss:
                     # save the model weights
                     best_valid_loss = valid_loss
-                    torch.save(model.state_dict(), os.path.join(model_checkpoints_folder, 'model.pth'))
+                    self._save_checkpoint(epoch_counter, model, optimizer, scheduler, update_best=True)
 
                 #self.writer.add_scalar('validation_loss', valid_loss, global_step=valid_n_iter)
                 print(f"validation_loss {valid_loss}, iter {valid_n_iter}")
@@ -132,21 +135,10 @@ class SimCLR(object):
             # save checkpoints
             if ("checkpoint_every_n_epochs" in self.config.keys() and
                     epoch_counter % self.config['checkpoint_every_n_epochs'] == 0):
-                torch.save(model.state_dict(), os.path.join(model_checkpoints_folder, f'model_epoch_{epoch_counter}.pth'))
+                self._save_checkpoint(epoch_counter, model, optimizer, scheduler)
 
-            torch.save(model.state_dict(), os.path.join(model_checkpoints_folder, 'model_latest.pth'))
-            print(f"epoch {epoch_counter} end")
-
-    def _load_pre_trained_weights(self, model):
-        try:
-            checkpoints_folder = os.path.join('./runs', self.config['fine_tune_from'], 'checkpoints')
-            state_dict = torch.load(os.path.join(checkpoints_folder, 'model.pth'))
-            model.load_state_dict(state_dict)
-            print("Loaded pre-trained model with success.")
-        except FileNotFoundError:
-            print("Pre-trained weights not found. Training from scratch.")
-
-        return model
+            self._save_checkpoint(epoch_counter, model, optimizer, scheduler, update_latest=True)
+            print(f"epoch {epoch_counter} finished")
 
     def _validate(self, model, valid_loader):
 
@@ -181,3 +173,31 @@ class SimCLR(object):
             print(f"Classifier accuracy {score_eval}")
 
         model.train()
+
+    def _load_previous_state(self, model, optimizer):
+        try:
+            checkpoints_folder = os.path.join('./runs', self.config['continue_training_from'], 'checkpoints')
+            checkpoint = torch.load(os.path.join(checkpoints_folder, 'model_latest.pth'))
+
+            model.load_state_dict(checkpoint['state_dict'])
+            optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
+            scheduler = checkpoint['scheduler']
+            epoch = checkpoint['epoch']
+            print("Loaded from checkpoint with success.")
+        except FileNotFoundError:
+            Exception("Previous state checkpoint not found.")
+
+        return model, optimizer, scheduler, epoch + 1
+
+    def _save_checkpoint(self, epoch, model, optimizer, scheduler, update_latest=False, update_best=False):
+        checkpoint = {
+            'epoch': epoch,
+            'state_dict': model.state_dict(),
+            'optimizer_state_dict': optimizer.state_dict(),
+            'scheduler': scheduler}
+        if update_latest:
+            torch.save(checkpoint, os.path.join(self.model_checkpoints_folder, 'model_latest.pth'))
+        elif update_best:
+            torch.save(checkpoint, os.path.join(self.model_checkpoints_folder, 'model_best.pth'))
+        else:
+            torch.save(checkpoint, os.path.join(self.model_checkpoints_folder, f'model_epoch_{epoch}.pth'))
