@@ -14,8 +14,8 @@ model:
   base_model: "resnet50"
 
 dataset:
-  path: '../single-cell-sample-train/sc-metadata.csv'
-  root_dir: '../single-cell-sample-train/'
+  path: '/scratch_net/neo/shared_data/datasets/single-cell-sample-train/sc-metadata.csv'
+  root_dir: '/scratch_net/neo/shared_data/datasets/single-cell-sample-train/'
   s: 1
   input_shape: (96,96,3)
   num_workers: 4
@@ -24,8 +24,8 @@ dataset:
   preload: True
 
 eval_dataset:
-  path: '/cluster/scratch/aperakis/single-cell-full-dmso/sc-metadata.csv'
-  root_dir: '/cluster/scratch/aperakis/single-cell-full-dmso/'
+  path: '/scratch_net/neo/shared_data/datasets/single-cell-sample-validation-full-dmso/sc-metadata.csv'
+  root_dir: '/scratch_net/neo/shared_data/datasets/single-cell-sample-validation-full-dmso/'
   input_shape: (96,96,3)
   num_workers: 0
   valid_size: 0.001
