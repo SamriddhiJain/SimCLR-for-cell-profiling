@@ -1,5 +1,6 @@
 import cv2
 import numpy as np
+import random
 
 np.random.seed(0)
 
@@ -23,3 +24,21 @@ class GaussianBlur(object):
             sample = cv2.GaussianBlur(sample, (self.kernel_size, self.kernel_size), sigma)
 
         return sample
+
+
+class RandomCenterCrop(object):
+
+    def __init__(self, scale=(0.08, 1.0)):
+        self.scale = scale
+
+    def __call__(self, sample):
+        w, h = sample.size
+        new_half_size = int(np.ceil(random.uniform(self.scale[0], self.scale[1]) * min(h, w) / 2))
+
+        c_h = h // 2
+        c_w = w // 2
+
+        cropped = sample.crop((c_w - new_half_size, c_h - new_half_size,
+                               c_w + new_half_size, c_h + new_half_size))
+
+        return cropped

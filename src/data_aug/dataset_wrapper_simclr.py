@@ -2,7 +2,7 @@ import numpy as np
 from torch.utils.data import DataLoader
 from torch.utils.data.sampler import SubsetRandomSampler
 import torchvision.transforms as transforms
-from data_aug.gaussian_blur import GaussianBlur
+from data_aug.custom import GaussianBlur, RandomCenterCrop
 from torchvision import datasets
 from data_aug.cell_dataset import CellDataset
 from data_aug.dataset_wrapper import DataSetWrapper
@@ -31,6 +31,10 @@ class DataSetWrapperSimCLR(DataSetWrapper):
                                               transforms.RandomHorizontalFlip(),
                                               transforms.RandomApply([color_jitter], p=0.8),
                                               # transforms.RandomGrayscale(p=0.2),
+                                              # transforms.Compose([RandomCenterCrop(),
+                                              #                     transforms.Resize(size=self.input_shape[0])]),
+                                              # transforms.Compose([transforms.CenterCrop(self.input_shape[0]//2),
+                                              #                    transforms.Resize(size=self.input_shape[0])]),
                                               GaussianBlur(kernel_size=int(0.1 * self.input_shape[0])),
                                               transforms.ToTensor(),
                                               transforms.Normalize((0.7469, 0.7403, 0.7307), (0.1548, 0.1594, 0.1706))])
