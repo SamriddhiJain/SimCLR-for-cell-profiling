@@ -7,6 +7,7 @@ import time
 from feature_eval.profile_metrics import calculate_nsc_and_nscb
 from generate_features import get_embeddings, get_data
 
+
 # create moa meta data file
 def get_meta(sc_meta_path):
     meta_sc = pd.read_csv(sc_meta_path)
@@ -72,26 +73,26 @@ def nsc_nscb(epoch_list_dic):
                                                DO_WHITENING=False,
                                                DO_CORAL=False)
 
-            print(f"Results for {model_dir} epoch {epoch};")
-            print(f"NSC:{nsc} NSCB:{nscb}")
-
             # with whitening transformation
             plot_file_structure = f"{checkpoints_dir}/" + "{}_epoch_" + f"{epoch}_whitened.jpg"
-            nsc, nscb = calculate_nsc_and_nscb(features=features,
-                                               meta=meta,
-                                               plot_file_structure=plot_file_structure,
-                                               DO_WHITENING=True,
-                                               DO_CORAL=False)
-            print(f"whitening-NSC:{nsc} whitening-NSCB:{nscb}")
+            w_nsc, w_nscb = calculate_nsc_and_nscb(features=features,
+                                                   meta=meta,
+                                                   plot_file_structure=plot_file_structure,
+                                                   DO_WHITENING=True,
+                                                   DO_CORAL=False)
 
             # with TVN transformation
             plot_file_structure = f"{checkpoints_dir}/" + "{}_epoch_" + f"{epoch}_TVN.jpg"
-            nsc, nscb = calculate_nsc_and_nscb(features=features,
-                                               meta=meta,
-                                               plot_file_structure=plot_file_structure,
-                                               DO_WHITENING=True,
-                                               DO_CORAL=True)
-            print(f"TVN-NSC:{nsc} TVN-NSCB:{nscb}")
+            tvn_nsc, tvn_nscb = calculate_nsc_and_nscb(features=features,
+                                                       meta=meta,
+                                                       plot_file_structure=plot_file_structure,
+                                                       DO_WHITENING=True,
+                                                       DO_CORAL=True)
+
+            print(f"Results for {model_dir} epoch {epoch};")
+            print(f"NSC:{nsc} NSCB:{nscb}")
+            print(f"whitening-NSC:{w_nsc} whitening-NSCB:{w_nscb}")
+            print(f"TVN-NSC:{tvn_nsc} TVN-NSCB:{tvn_nscb}")
 
 
 if __name__ == "__main__":

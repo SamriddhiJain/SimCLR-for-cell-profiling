@@ -32,7 +32,7 @@ class SimCLR(object):
         self.config = config
         self.device = self._get_device()
         self.writer = SummaryWriter(log_dir=os.path.join(self.config["run_dir"],
-                                                         datetime.now().strftime("%Y%m%d-%H%M%S")))
+                                                         datetime.now().strftime("%Y%B%d_%H-%M-%S")))
         self.dataset = dataset
         self.eval_dataset = eval_dataset
         self.nt_xent_criterion = NTXentLoss(self.device, config['batch_size'], **config['loss'])
@@ -77,7 +77,7 @@ class SimCLR(object):
         start_epoch = 0
 
         # load full previous states to continue a training
-        if self.config["continue_training_from"] is not None:
+        if self.config["continue_training_from"] != "None":
             model, optimizer, scheduler, start_epoch = self._load_previous_state(model, optimizer)
 
         if apex_support and self.config['fp16_precision']:

@@ -163,9 +163,9 @@ def calculate_nsc_and_nscb(features, meta, plot_file_structure, DO_WHITENING = F
             if treatments_df.loc[i, "MOA_class"] == prediction:
                 correct += 1
                 treatments_df.loc[i, "nsc"] = 1
-            else:
-                print(len(training_data), treatments_df.loc[i, "Compound"], treatments_df.loc[i, "Concentration"],
-                      treatments_df.loc[i, "MOA"], moas[prediction])
+            # else:
+            #     print(len(training_data), treatments_df.loc[i, "Compound"], treatments_df.loc[i, "Concentration"],
+            #           treatments_df.loc[i, "MOA"], moas[prediction])
             total += 1
         print("NSC Accuracy: {} correct out of {} = {}".format(correct, total, correct / total))
         return treatments_df.copy() ,correct / total
@@ -187,24 +187,24 @@ def calculate_nsc_and_nscb(features, meta, plot_file_structure, DO_WHITENING = F
             if valid_treatments.loc[i, "MOA_class"] == prediction:
                 correct += 1
             else:
-                print(len(training_data),
-                      valid_treatments.loc[i, "Compound"],
-                      valid_treatments.loc[i, "Concentration"],
-                      valid_treatments.loc[i, "MOA"],
-                      moas[prediction])
                 treatments_df.loc[i, "nscb"] = 0
+                # print(len(training_data),
+                #       valid_treatments.loc[i, "Compound"],
+                #       valid_treatments.loc[i, "Concentration"],
+                #       valid_treatments.loc[i, "MOA"],
+                #       moas[prediction])
             total += 1
         print("NSCB Accuracy: {} correct out of {} = {}".format(correct, total, correct / total))
         return treatments_df.copy(), correct / total
 
     ## TREATMENT LEVEL - NOT SAME COMPOUND MATCHING
-    print(" >> TREATMENT LEVEL")
+    # print(" >> TREATMENT LEVEL")
     treatments, calculated_nsc = nsc(treatments)
     # print(" >> WELL LEVEL")
     # nsc(wells)
 
     ## TREATMENT LEVEL - NOT SAME COMPOUND, NOT SAME BATCH
-    print(" >> TREATMENT LEVEL")
+    # print(" >> TREATMENT LEVEL")
     treatments, calculated_nscb = nscb(treatments)
 
     # VISUALIZATION OF PROFILES
