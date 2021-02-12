@@ -8,6 +8,7 @@ from feature_eval.random_forest_classifier import RFClassifier
 import os
 import shutil
 import sys
+import getpass
 from tqdm import tqdm
 from datetime import datetime
 
@@ -32,7 +33,7 @@ class SimCLR(object):
         self.config = config
         self.device = self._get_device()
         self.writer = SummaryWriter(log_dir=os.path.join(self.config["run_dir"],
-                                                         datetime.now().strftime("%Y%B%d_%H-%M-%S")))
+                                                         getpass.getuser() + '_' + datetime.now().strftime("%d%B%Y_%H-%M-%S")))
         self.dataset = dataset
         self.eval_dataset = eval_dataset
         self.nt_xent_criterion = NTXentLoss(self.device, config['batch_size'], **config['loss'])
@@ -74,7 +75,7 @@ class SimCLR(object):
         scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=len(train_loader), eta_min=0,
                                                                last_epoch=-1)
 
-        start_epoch = 0
+        start_epoch = 1
 
         # load full previous states to continue a training
         if self.config["continue_training_from"] != "None":
