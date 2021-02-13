@@ -93,7 +93,7 @@ class SimCLR(object):
         valid_n_iter = 0
         best_valid_loss = np.inf
 
-        for epoch_counter in tqdm(range(start_epoch, self.config['epochs'])):
+        for epoch_counter in tqdm(range(start_epoch, self.config['epochs']+1)):
             for ((xis, xjs), _) in tqdm(train_loader):
                 optimizer.zero_grad()
 

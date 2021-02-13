@@ -92,12 +92,12 @@ def calculate_nsc_and_nscb(features, meta, plot_file_structure, DO_WHITENING = F
         # Compute target matrix
         CF = sites.loc[sites["Compound"] == "DMSO", feature_ids]
         C_target = (1 / CF.shape[0]) * np.dot(CF.T, CF)
-        print("Is the covariance close the the identity?", np.allclose(C_target, np.eye(C_target.shape[0])))
+        # print("Is the covariance close the the identity?", np.allclose(C_target, np.eye(C_target.shape[0])))
 
         I = REG_PARAM * np.eye(C_target.shape[0])
         C_target = np.real(scipy.linalg.sqrtm(C_target + I))
 
-        print(np.sum(C_target))
+        # print(np.sum(C_target))
         plt.plot(np.diag(C_target))
         # plt.imshow(C_target)
 
@@ -114,10 +114,10 @@ def calculate_nsc_and_nscb(features, meta, plot_file_structure, DO_WHITENING = F
             plate_features = sites.iloc[plate_index][feature_ids]
 
             C_source = (1 / controls_features.shape[0]) * np.dot(controls_features.T, controls_features)
-            print("Is the covariance close the the identity?", np.allclose(C_source, np.eye(C_source.shape[0])))
+            # print("Is the covariance close the the identity?", np.allclose(C_source, np.eye(C_source.shape[0])))
             C_source = scipy.linalg.inv(np.real(scipy.linalg.sqrtm(C_source + np.eye(C_source.shape[0]))))
 
-            print(controls_features.shape, np.sum(C_source))
+            # print(controls_features.shape, np.sum(C_source))
             plt.figure()
             plt.plot(np.diag(C_source))
 
@@ -167,7 +167,7 @@ def calculate_nsc_and_nscb(features, meta, plot_file_structure, DO_WHITENING = F
             #     print(len(training_data), treatments_df.loc[i, "Compound"], treatments_df.loc[i, "Concentration"],
             #           treatments_df.loc[i, "MOA"], moas[prediction])
             total += 1
-        print("NSC Accuracy: {} correct out of {} = {}".format(correct, total, correct / total))
+        # print("NSC Accuracy: {} correct out of {} = {}".format(correct, total, correct / total))
         return treatments_df.copy() ,correct / total
 
     def nscb(treatments_df):
@@ -194,7 +194,7 @@ def calculate_nsc_and_nscb(features, meta, plot_file_structure, DO_WHITENING = F
                 #       valid_treatments.loc[i, "MOA"],
                 #       moas[prediction])
             total += 1
-        print("NSCB Accuracy: {} correct out of {} = {}".format(correct, total, correct / total))
+        # print("NSCB Accuracy: {} correct out of {} = {}".format(correct, total, correct / total))
         return treatments_df.copy(), correct / total
 
     ## TREATMENT LEVEL - NOT SAME COMPOUND MATCHING
