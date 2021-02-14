@@ -49,9 +49,14 @@ class CellDataset(Dataset):
             idx = idx.tolist()
 
         if self.preload:
-            return self.images[idx], self.labels[idx]
+            sample = self.images[idx]
         else:
-            return self.load_image(self.root_dir+self.train_images[idx]), self.labels[idx]
+            sample = self.load_image(self.root_dir+self.train_images[idx])
+
+        if self.transform:
+            sample = self.transform(sample)
+
+        return sample, self.labels[idx]
 
     def load_image(self, path):
         image_string = torch.Tensor(io.imread(path))
@@ -59,8 +64,5 @@ class CellDataset(Dataset):
         sample = torch.stack((image[0], image[1], image[2])).float()
         sample = transforms.ToPILImage()(sample)
         sample = sample.resize((self.input_shape[0], self.input_shape[0]), 2)
-
-        if self.transform:
-            sample = self.transform(sample)
 
         return sample
