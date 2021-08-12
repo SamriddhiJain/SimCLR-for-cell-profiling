@@ -1,4 +1,4 @@
-# SimCLR for cell-profiling
+# Contrastive Learning of Single-Cell Phenotypic Representations for Treatment Classification
 This repo hosts the code for all the experiments done as part of the group project "SimCLR for cell-profiling" in the course Deep Learning offered at ETH Zurich Autumn Semester 2020.
 
 ## Project overview
